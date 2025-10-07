@@ -1,0 +1,19 @@
+{
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.11",
+      "memory": 1024,
+      "maxDuration": 60,
+      "includeFiles": [
+        "app/**",
+        "templates/**",
+        "static/**",
+        "wsgi.py",
+        "requirements.txt"
+      ]
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/index.py" }
+  ]
+}
