@@ -68,10 +68,9 @@ def health_supabase():
     }), 200
 
 
-url = 'https://btvfcbtaqddutipmhpkf.supabase.co'  # Substitua pela sua URL real do Supabase
-key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0dmZjYnRhcWRkdXRpcG1ocGtmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTg0Mjg4NSwiZXhwIjoyMDc1NDE4ODg1fQ.oX42yzGzMYOmi0BN1JpREvX3BTPc0z5YHIwQLpBfh1s'  # Substitua pela chave do Supabase
-supabase = create_client(url, key)
-
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+supabase: Client = create_client(url, key)
 
 
 # ---------- health & uploads ----------
@@ -83,39 +82,17 @@ def health():
 @site_bp.get("/uploads/<path:filename>")
 def uploads(filename):
     """
-    Serve os arquivos diretamente do Supabase, se disponível.
+    Serve os arquivos da rota serverless `/uploads/<filename>`, agora usando o Supabase.
     """
     try:
-        # Cria o cliente do Supabase
-        url = os.getenv("SUPABASE_URL")
-        key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-        supabase = create_client(url, key)
-
-        # Verifique se o cliente foi inicializado corretamente
-        if not supabase:
-            return jsonify({"error": "Falha ao inicializar cliente do Supabase"}), 500
-
-        print(f"Cliente do Supabase inicializado com sucesso!")
-
-        # Obtenha a URL pública do arquivo no Supabase
+        # Tente obter a URL pública do arquivo no bucket do Supabase
         file_url = supabase.storage.from_("mdy-uploads").get_public_url(filename)
-        
-        print(f"URL gerada para o arquivo: {file_url}")
-
-        # Verifique se o arquivo existe
-        if not file_url:
-            return jsonify({"error": "Arquivo não encontrado"}), 404
-
-        return jsonify({"file_url": file_url})  # Retorna a URL pública
+        return jsonify({"file_url": file_url["publicURL"]})
     except Exception as e:
-        # Caso ocorra um erro, retorne uma mensagem
-        print(f"Erro ao acessar o arquivo: {e}")
+        # Caso ocorra algum erro, retornar uma mensagem
         return jsonify({"error": f"Erro ao buscar o arquivo: {str(e)}"}), 500
 
 
-
-bucket = os.getenv("SUPABASE_BUCKET")
-print(f"Bucket configurado: {bucket}")
 
 # ---------- páginas ----------
 @site_bp.get("/")

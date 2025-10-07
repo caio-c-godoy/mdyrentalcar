@@ -82,8 +82,8 @@ def _save_uploaded_image(file_storage) -> str:
             file_opts = {
                 "cache-control": "public, max-age=31536000",
                 "content-type": file_storage.mimetype or "application/octet-stream",
+                "contentType": file_storage.mimetype or "application/octet-stream",
             }
-
             # Envio para o Supabase
             supabase.storage.from_(bucket).upload(
                 path=path,
@@ -103,6 +103,17 @@ def _save_uploaded_image(file_storage) -> str:
     except Exception as e:
         print(f"UPLOAD→ Falha ao tentar fazer upload para o Supabase: {e!r}")
 
+    # 2) Fallback local (/tmp)
+    try:
+        upload_dir = current_app.config.get("UPLOAD_DIR")
+        os.makedirs(upload_dir, exist_ok=True)
+        dest = os.path.join(upload_dir, secure_filename(unique))
+        file_storage.save(dest)
+        print(f"UPLOAD→ Fallback: Arquivo salvo em /tmp: {dest}")
+        return unique
+    except Exception as e:
+        print(f"UPLOAD→ Fallback falhou: {e!r}")
+        return ""
 
 # === fim upload ===
 
@@ -462,10 +473,3 @@ def test_upload():
         return jsonify({"success": True, "url": result}), 200
     return jsonify({"error": "Falha ao enviar o arquivo"}), 500
 
-@admin.get('/test-env')
-def test_env_vars():
-    return jsonify({
-        "SUPABASE_URL": os.getenv("SUPABASE_URL"),
-        "SUPABASE_SERVICE_ROLE_KEY": os.getenv("SUPABASE_SERVICE_ROLE_KEY"),
-        "SUPABASE_BUCKET": os.getenv("SUPABASE_BUCKET")
-    })
