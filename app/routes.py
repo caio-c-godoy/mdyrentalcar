@@ -1,80 +1,153 @@
-﻿# app/routes.py
-import re
-from flask import Blueprint, render_template, request, jsonify
-
-def _ensure_tables():
-    try:
-        db.create_all()
-    except Exception:
-        pass
-from app.extensions import db
-from app.models import Location, QuoteRequest, ContactMessage, SiteSetting, LegalPage, FeaturedCategory
+﻿import re
+import psycopg2
 import unicodedata
+from flask import (
+    Blueprint, render_template, request, jsonify,
+    current_app, send_from_directory, url_for
+)
+from app.extensions import db
+from app.models import (
+    Location, QuoteRequest, ContactMessage, SiteSetting,
+    LegalPage, FeaturedCategory
+)
 from .models import FaqItem
+
+from supabase import create_client, Client
+import os
 
 site_bp = Blueprint("site", __name__)
 
+
+# ---------- utils ----------
 def digits_only(s: str) -> str:
     return re.sub(r"\D+", "", s or "")
 
 
-
 def _slug_key(s: str) -> str:
     """
-    Normaliza slugs para chave de comparaÃ§Ã£o:
-    - minÃºsculas
-    - remove acentos
-    - troca qq separador por '-'
-    - remove '-' das pontas
-    - dobra alguns plurais comuns (sedans->sedan, suvs->suvs/suv)
+    Normaliza slugs para chave de comparação.
     """
     s = (s or "").strip().lower()
     s = unicodedata.normalize("NFKD", s)
     s = "".join(ch for ch in s if not unicodedata.combining(ch))
     s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")
 
-    # dobras Ãºteis
+    # dobras úteis
     if s == "sedans":
         s = "sedan"
     if s == "suv":
-        s = "suvs"  # usamos 'suvs' como chave canÃ´nica
-    if s in ("especial", "especial", "special"):
+        s = "suvs"  # usamos 'suvs' como chave canônica
+    if s in ("especial", "special"):
         s = "especial"
     return s
 
 
+def _resolve_image_url(v: str) -> str:
+    if not v:
+        return ""
+    v = v.strip()
+    if v.startswith("http://") or v.startswith("https://"):
+        return v
+    filename = v.split("/")[-1]
+    try:
+        return url_for("site.uploads", filename=filename, _external=False)
+    except Exception:
+        return f"/uploads/{filename}"
+
+
+@site_bp.get("/health/supabase")
+def health_supabase():
+    import os
+    from app.extensions import supabase
+    return jsonify({
+        "supabase_client": bool(supabase is not None),
+        "envs": {
+            "SUPABASE_URL": bool(os.getenv("SUPABASE_URL")),
+            "SUPABASE_SERVICE_ROLE_KEY": bool(os.getenv("SUPABASE_SERVICE_ROLE_KEY")),
+            "SUPABASE_BUCKET": bool(os.getenv("SUPABASE_BUCKET")),
+        }
+    }), 200
+
+
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+supabase: Client = create_client(url, key)
+
+
+# ---------- health & uploads ----------
+@site_bp.get("/health")
+def health():
+    return "ok", 200
+
+
+@site_bp.get("/uploads/<filename>")
+def uploads(filename):
+    """
+    Serve os arquivos diretamente do banco de dados (PostgreSQL).
+    """
+    try:
+        # Conectar ao banco de dados PostgreSQL
+        connection = psycopg2.connect(
+            dbname="your_db_name",  # Substitua com o nome do seu banco de dados
+            user="your_db_user",  # Substitua com o usuário do banco de dados
+            password="your_db_password",  # Substitua com a senha do banco de dados
+            host="your_db_host",  # Substitua com o host do banco de dados
+            port="your_db_port"  # Substitua com a porta do banco de dados
+        )
+        cursor = connection.cursor()
+
+        # Recuperando a imagem (BLOB) do banco de dados
+        query = "SELECT image FROM featured_categories WHERE name = %s"
+        cursor.execute(query, (filename,))
+        result = cursor.fetchone()
+
+        if result:
+            image_data = result[0]  # A imagem será um objeto binário
+            # Retornar a imagem como resposta
+            return Response(image_data, mimetype="image/jpeg")  # Ajuste o tipo de MIME conforme necessário
+        else:
+            return jsonify({"error": "Arquivo não encontrado"}), 404
+
+        cursor.close()
+        connection.close()
+
+    except Exception as e:
+        print(f"Erro ao recuperar a imagem do banco de dados: {e!r}")
+        return jsonify({"error": f"Erro ao buscar o arquivo: {str(e)}"}), 500
+
+
+# ---------- páginas ----------
 @site_bp.get("/")
 def home():
     # WhatsApp do admin
     whatsapp_raw = SiteSetting.get_value("whatsapp_number", "") or ""
     whatsapp = digits_only(whatsapp_raw)
 
-    # categorias do banco indexadas por slug normalizado
+    # categorias indexadas por slug normalizado
     all_cats = {}
     for c in FeaturedCategory.query.all():
         k = _slug_key(c.slug or "")
-        if k:  # guarda o primeiro por posiÃ§Ã£o/ID se quiser priorizar depois
+        if k:
             all_cats[k] = c
 
-    # slots fixos (nomes exibidos / slugs "canÃ´nicos")
+    # slots fixos exibidos na home
     desired = [
-        ("Compacto",     "compacto"),
-        ("Sedan",        "sedan"),
-        ("SUVs",         "suvs"),
-        ("Minivans",     "minivans"),        
-        ("Luxo",         "luxo"),
-        ("Especial",  "especial"),
-        
+        ("Compacto", "compacto"),
+        ("Sedan", "sedan"),
+        ("SUVs", "suvs"),
+        ("Minivans", "minivans"),
+        ("Luxo", "luxo"),
+        ("Especial", "especial"),
     ]
 
     grid_slots = []
     for name, want_slug in desired:
         c = all_cats.get(_slug_key(want_slug))
         if not c:
-            # tente casar variantes comuns digitadas no admin:
+            # variantes comuns digitadas no admin
             variantes = {
-                "sedan": ["sedans", "sedÃ£"],
-                "suvs":  ["suv"],
+                "sedan": ["sedans", "sedã", "sedan"],
+                "suvs": ["suv"],
                 "especial": ["special"],
             }.get(want_slug, [])
             for v in variantes:
@@ -83,19 +156,24 @@ def home():
                     break
 
         if c:
-            grid_slots.append({
-                "name":  c.name or name,
-                "slug":  _slug_key(c.slug),
-                "active": bool(c.active),
-                "image": (c.image_url or ""),  # relativo a /static
-            })
+            grid_slots.append(
+                {
+                    "name": c.name or name,
+                    "slug": _slug_key(c.slug),
+                    "active": bool(c.active),
+                    # >>> AQUI: sempre converte para URL servível
+                    "image": _resolve_image_url(c.image_url),
+                }
+            )
         else:
-            grid_slots.append({
-                "name":  f"{name} (configurar no admin)",
-                "slug":  want_slug,
-                "active": False,
-                "image": "",
-            })
+            grid_slots.append(
+                {
+                    "name": f"{name} (configurar no admin)",
+                    "slug": want_slug,
+                    "active": False,
+                    "image": "",
+                }
+            )
 
     return render_template("index.html", whatsapp=whatsapp, grid_slots=grid_slots)
 
@@ -103,16 +181,35 @@ def home():
 # ---------- API ----------
 @site_bp.get("/api/locations")
 def api_locations():
-    rows = Location.query.filter_by(active=True).order_by(Location.position.asc()).all()
+    rows = (
+        Location.query.filter_by(active=True)
+        .order_by(Location.position.asc())
+        .all()
+    )
     return jsonify([{"id": r.id, "name": r.name} for r in rows])
+
 
 @site_bp.post("/api/quote")
 def api_quote():
     data = request.get_json(silent=True) or {}
-    required = ["pickup_place", "pickup_date", "drop_place", "drop_date", "name", "phone", "category"]
+    required = [
+        "pickup_place",
+        "pickup_date",
+        "drop_place",
+        "drop_date",
+        "name",
+        "phone",
+        "category",
+    ]
     missing = [k for k in required if not str(data.get(k, "")).strip()]
     if missing:
-        return jsonify(ok=False, error=f"Campos obrigatÃ³rios ausentes: {', '.join(missing)}"), 400
+        return (
+            jsonify(
+                ok=False,
+                error=f"Campos obrigatórios ausentes: {', '.join(missing)}",
+            ),
+            400,
+        )
 
     q = QuoteRequest(
         pickup_place=data["pickup_place"].strip(),
@@ -124,12 +221,15 @@ def api_quote():
         category=data["category"].strip(),
         source=(data.get("source") or "home").strip(),
         user_agent=request.headers.get("User-Agent", "")[:255],
-        ip_addr=request.headers.get("X-Forwarded-For", request.remote_addr or "")[:45],
+        ip_addr=request.headers.get("X-Forwarded-For", request.remote_addr or "")[
+            :45
+        ],
         status="novo",
     )
     db.session.add(q)
     db.session.commit()
     return jsonify(ok=True, id=q.id)
+
 
 @site_bp.post("/api/contact")
 def api_contact():
@@ -137,36 +237,49 @@ def api_contact():
     required = ["name", "email", "message"]
     missing = [k for k in required if not str(data.get(k, "")).strip()]
     if missing:
-        return jsonify(ok=False, error=f"Campos obrigatÃ³rios ausentes: {', '.join(missing)}"), 400
+        return (
+            jsonify(
+                ok=False,
+                error=f"Campos obrigatórios ausentes: {', '.join(missing)}",
+            ),
+            400,
+        )
     m = ContactMessage(
         name=data["name"].strip(),
         email=data["email"].strip(),
         message=data["message"].strip(),
-        ip_addr=request.headers.get("X-Forwarded-For", request.remote_addr or "")[:45],
+        ip_addr=request.headers.get("X-Forwarded-For", request.remote_addr or "")[
+            :45
+        ],
         user_agent=request.headers.get("User-Agent", "")[:255],
     )
     db.session.add(m)
     db.session.commit()
     return jsonify(ok=True, id=m.id)
 
-# ======== PÃ¡ginas legais pÃºblicas ========
+
+# ---------- páginas legais ----------
 @site_bp.get("/privacy")
 def privacy_page():
-    page = LegalPage.get_or_create("privacy", "PolÃ­tica de Privacidade")
+    page = LegalPage.get_or_create("privacy", "Política de Privacidade")
     return render_template("legal_public.html", page=page)
+
 
 @site_bp.get("/terms")
 def terms_page():
     page = LegalPage.get_or_create("terms", "Termos de Uso")
     return render_template("legal_public.html", page=page)
-# ======== fim pÃ¡ginas legais pÃºblicas ========
 
-@site_bp.get('/faq')
+
+# ---------- FAQ ----------
+@site_bp.get("/faq")
 def faq_page():
-    # WhatsApp (para manter o FAB e consistÃªncia visual, se vocÃª usa isso no FAQ tambÃ©m)
-    whatsapp_raw = SiteSetting.get_value('whatsapp_number', '') or ''
+    whatsapp_raw = SiteSetting.get_value("whatsapp_number", "") or ""
     whatsapp = digits_only(whatsapp_raw)
 
-    items = FaqItem.query.filter_by(active=True).order_by(FaqItem.position.asc(), FaqItem.id.asc()).all()
-    return render_template('faq.html', items=items, whatsapp=whatsapp)
-
+    items = (
+        FaqItem.query.filter_by(active=True)
+        .order_by(FaqItem.position.asc(), FaqItem.id.asc())
+        .all()
+    )
+    return render_template("faq.html", items=items, whatsapp=whatsapp)
