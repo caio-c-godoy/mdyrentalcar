@@ -1,5 +1,5 @@
 ﻿from __future__ import annotations
-
+import psycopg2
 import re
 import time
 from functools import wraps
@@ -47,9 +47,14 @@ except OSError:
 
 ALLOWED_IMG_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
+import psycopg2
+from werkzeug.utils import secure_filename
+import uuid
+import pathlib
+
 def _save_uploaded_image(file_storage) -> str:
     """
-    Função para salvar imagem, tentando enviar para o Supabase e, se falhar, salvando localmente.
+    Função para salvar imagem no banco de dados (PostgreSQL).
     """
     if not file_storage or not getattr(file_storage, "filename", ""):
         print("UPLOAD→ Nenhum arquivo recebido!")
@@ -61,59 +66,75 @@ def _save_uploaded_image(file_storage) -> str:
         return ""
 
     unique = f"{uuid.uuid4().hex}{ext}"
-    bucket = os.getenv("SUPABASE_BUCKET")
-    url = os.getenv("SUPABASE_URL")
-    role = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-    # Verificar e registrar as variáveis de ambiente
-    print(f"SUPABASE_URL: {url}")
-    print(f"SUPABASE_SERVICE_ROLE_KEY: {role}")
-    print(f"SUPABASE_BUCKET: {bucket}")
-
-    # 1) Supabase (persistente)
+    # Conectar ao banco de dados PostgreSQL
     try:
-        if supabase is not None and bucket and url and role:
-            path = f"categories/{secure_filename(unique)}"
-            data = file_storage.read()
+        connection = psycopg2.connect(
+            dbname="your_db_name",  # Substitua com o nome do seu banco de dados
+            user="your_db_user",  # Substitua com o usuário do banco de dados
+            password="your_db_password",  # Substitua com a senha do banco de dados
+            host="your_db_host",  # Substitua com o host do banco de dados
+            port="your_db_port"  # Substitua com a porta do banco de dados
+        )
+        cursor = connection.cursor()
 
-            print(f"UPLOAD→ Tentando fazer upload para o Supabase com o caminho: {path}")
+        # Lendo o arquivo da imagem e convertendo para binário
+        file_binary = file_storage.read()
 
-            # Tenta fazer o upload
-            file_opts = {
-                "cache-control": "public, max-age=31536000",
-                "content-type": file_storage.mimetype or "application/octet-stream",
-                "contentType": file_storage.mimetype or "application/octet-stream",
-            }
-            # Envio para o Supabase
-            supabase.storage.from_(bucket).upload(
-                path=path,
-                file=data,
-                file_options=file_opts,
-                upsert=True,
-            )
-            # Verifique se o arquivo foi carregado corretamente
-            public_url = supabase.storage.from_(bucket).get_public_url(path)
-            print(f"UPLOAD→ Sucesso! URL pública gerada: {public_url}")
-            return public_url or ""
-        else:
-            print(
-                "UPLOAD→ Erro: Supabase ou configuração do bucket está ausente."
-                f" (supabase={supabase is not None}, bucket={bucket}, url={'ok' if url else 'missing'}, role={'ok' if role else 'missing'})"
-            )
+        # Inserindo a imagem na tabela 'featured_categories'
+        query = """
+        UPDATE featured_categories
+        SET image = %s
+        WHERE name = %s  -- Use o nome ou outro identificador da categoria
+        """
+        cursor.execute(query, (psycopg2.Binary(file_binary), "Categoria Nome"))
+
+        # Commitando a transação
+        connection.commit()
+
+        cursor.close()
+        connection.close()
+
+        print("UPLOAD→ Imagem salva no banco de dados com sucesso!")
+        return f"Categoria com imagem {unique} atualizada com sucesso."
+
     except Exception as e:
-        print(f"UPLOAD→ Falha ao tentar fazer upload para o Supabase: {e!r}")
-
-    # 2) Fallback local (/tmp)
-    try:
-        upload_dir = current_app.config.get("UPLOAD_DIR")
-        os.makedirs(upload_dir, exist_ok=True)
-        dest = os.path.join(upload_dir, secure_filename(unique))
-        file_storage.save(dest)
-        print(f"UPLOAD→ Fallback: Arquivo salvo em /tmp: {dest}")
-        return unique
-    except Exception as e:
-        print(f"UPLOAD→ Fallback falhou: {e!r}")
+        print(f"UPLOAD→ Erro ao tentar salvar a imagem no banco de dados: {e!r}")
         return ""
+
+
+def get_image_from_db(category_name):
+    try:
+        connection = psycopg2.connect(
+            dbname="your_db_name", 
+            user="your_db_user", 
+            password="your_db_password", 
+            host="your_db_host", 
+            port="your_db_port"
+        )
+        cursor = connection.cursor()
+
+        # Recuperando a imagem (BLOB) do banco de dados
+        query = "SELECT image FROM categories WHERE name = %s"
+        cursor.execute(query, (category_name,))
+        result = cursor.fetchone()
+
+        if result:
+            image_data = result[0]  # A imagem será um objeto binário
+            # Aqui, você pode salvar a imagem localmente ou retornar sua URL
+            with open("output_image.jpg", "wb") as f:
+                f.write(image_data)
+
+            print("Imagem recuperada com sucesso!")
+        else:
+            print("Imagem não encontrada para a categoria.")
+
+        cursor.close()
+        connection.close()
+
+    except Exception as e:
+        print(f"Erro ao recuperar a imagem do banco de dados: {e!r}")
+
 
 # === fim upload ===
 

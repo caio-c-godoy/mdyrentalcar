@@ -1,4 +1,5 @@
 ﻿import re
+import psycopg2
 import unicodedata
 from flask import (
     Blueprint, render_template, request, jsonify,
@@ -79,19 +80,40 @@ def health():
     return "ok", 200
 
 
-@site_bp.get("/uploads/<path:filename>")
+@site_bp.get("/uploads/<filename>")
 def uploads(filename):
     """
-    Serve os arquivos da rota serverless `/uploads/<filename>`, agora usando o Supabase.
+    Serve os arquivos diretamente do banco de dados (PostgreSQL).
     """
     try:
-        # Tente obter a URL pública do arquivo no bucket do Supabase
-        file_url = supabase.storage.from_("mdy-uploads").get_public_url(filename)
-        return jsonify({"file_url": file_url["publicURL"]})
-    except Exception as e:
-        # Caso ocorra algum erro, retornar uma mensagem
-        return jsonify({"error": f"Erro ao buscar o arquivo: {str(e)}"}), 500
+        # Conectar ao banco de dados PostgreSQL
+        connection = psycopg2.connect(
+            dbname="your_db_name",  # Substitua com o nome do seu banco de dados
+            user="your_db_user",  # Substitua com o usuário do banco de dados
+            password="your_db_password",  # Substitua com a senha do banco de dados
+            host="your_db_host",  # Substitua com o host do banco de dados
+            port="your_db_port"  # Substitua com a porta do banco de dados
+        )
+        cursor = connection.cursor()
 
+        # Recuperando a imagem (BLOB) do banco de dados
+        query = "SELECT image FROM featured_categories WHERE name = %s"
+        cursor.execute(query, (filename,))
+        result = cursor.fetchone()
+
+        if result:
+            image_data = result[0]  # A imagem será um objeto binário
+            # Retornar a imagem como resposta
+            return Response(image_data, mimetype="image/jpeg")  # Ajuste o tipo de MIME conforme necessário
+        else:
+            return jsonify({"error": "Arquivo não encontrado"}), 404
+
+        cursor.close()
+        connection.close()
+
+    except Exception as e:
+        print(f"Erro ao recuperar a imagem do banco de dados: {e!r}")
+        return jsonify({"error": f"Erro ao buscar o arquivo: {str(e)}"}), 500
 
 
 # ---------- páginas ----------
