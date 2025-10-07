@@ -42,7 +42,7 @@
     <div class="text-center text-muted py-4">Nenhuma categoria cadastrada.</div>
   {% else %}
 
-  {# ====== DESKTOP (≥ md): tabela limpa, sem overflow ====== #}
+  {# ====== DESKTOP (≥ md): tabela ====== #}
   <div class="d-none d-md-block">
     <div class="table-responsive">
       <table class="table align-middle table-dark table-striped table-bordered mb-0">
@@ -72,16 +72,24 @@
             <td><input name="position" type="number" class="form-control" value="{{ c.position or 0 }}" form="f{{ c.id }}"></td>
             <td>
               {% if c.image_url %}
-                <div class="small mb-1">
-                  Atual:
-                  <a class="text-break" target="_blank"
-                     href="{{ url_for('site.uploads', filename=c.image_url) }}">{{ c.image_url }}</a>
-                </div>
-                <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
-                  <img class="rounded"
-                       src="{{ url_for('site.uploads', filename=c.image_url) }}"
-                       alt="{{ c.name }}" style="object-fit:cover">
-                </div>
+                {% set img = c.image_url %}
+                {% if img.startswith('http') %}
+                  <div class="small mb-1">
+                    Atual: <a class="text-break" target="_blank" href="{{ img }}">{{ img }}</a>
+                  </div>
+                  <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
+                    <img class="rounded" src="{{ img }}" alt="{{ c.name }}" style="object-fit:cover">
+                  </div>
+                {% else %}
+                  <div class="small mb-1">
+                    Atual: <span class="text-break">{{ img }}</span>
+                  </div>
+                  <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
+                    <img class="rounded"
+                         src="{{ url_for('site.uploads', filename=img) }}"
+                         alt="{{ c.name }}" style="object-fit:cover">
+                  </div>
+                {% endif %}
               {% endif %}
               <input type="file" name="image_file" accept="image/*" class="form-control" form="f{{ c.id }}">
             </td>
@@ -110,7 +118,7 @@
     </div>
   </div>
 
-  {# ====== MOBILE (< md): cards empilhados ====== #}
+  {# ====== MOBILE (< md): cards ====== #}
   <div class="d-md-none vstack gap-3">
     {% for c in categories %}
     <div class="card">
@@ -141,12 +149,20 @@
           </div>
 
           {% if c.image_url %}
-            <div class="ratio ratio-16x9 mb-2">
-              <img class="rounded"
-                   src="{{ url_for('site.uploads', filename=c.image_url) }}"
-                   alt="{{ c.name }}" style="object-fit:cover">
-            </div>
-            <div class="small text-muted text-break mb-2">{{ c.image_url }}</div>
+            {% set img = c.image_url %}
+            {% if img.startswith('http') %}
+              <div class="ratio ratio-16x9 mb-2">
+                <img class="rounded" src="{{ img }}" alt="{{ c.name }}" style="object-fit:cover">
+              </div>
+              <div class="small text-muted text-break mb-2">{{ img }}</div>
+            {% else %}
+              <div class="ratio ratio-16x9 mb-2">
+                <img class="rounded"
+                     src="{{ url_for('site.uploads', filename=img) }}"
+                     alt="{{ c.name }}" style="object-fit:cover">
+              </div>
+              <div class="small text-muted text-break mb-2">{{ img }}</div>
+            {% endif %}
           {% endif %}
           <div class="mb-3">
             <label class="form-label small">Imagem (upload)</label>

@@ -6,6 +6,7 @@ import time
 from functools import wraps
 from urllib.parse import quote
 from .models import FaqItem
+from app.extensions import supabase
 
 from flask import (
     Blueprint,
@@ -44,23 +45,50 @@ except OSError:
 
 ALLOWED_IMG_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
-
-
 def _save_uploaded_image(file_storage) -> str:
     """
-    Recebe um FileStorage (campo 'image_file'), valida e salva.
-    Retorna apenas o nome do arquivo salvo (ex.: '123_nome.jpg') ou "".
+    Salva a imagem. Se SUPABASE_* estiver configurado, envia para Supabase Storage
+    e retorna a URL pública. Caso contrário, salva localmente em /tmp e retorna
+    apenas o nome do arquivo (fallback dev).
     """
-    if not file_storage or not getattr(file_storage, "filename", ""):
+    if not file_storage:
         return ""
-    name = secure_filename(file_storage.filename)
-    _, ext = os.path.splitext(name)
-    ext = ext.lower()
+
+    ext = pathlib.Path(file_storage.filename or "").suffix.lower()
     if ext not in ALLOWED_IMG_EXTS:
         return ""
-    unique = f"{int(time.time())}_{name}"
-    dest = os.path.join(UPLOAD_DIR, unique)
-    file_storage.save(dest)
+
+    unique = f"{uuid.uuid4().hex}{ext}"
+
+    # 1) Se houver Supabase Storage configurado, use-o (persistente)
+    try:
+        if supabase is not None and os.getenv("SUPABASE_BUCKET"):
+            bucket = os.getenv("SUPABASE_BUCKET")
+            # caminho “lógico” dentro do bucket (pode organizar por pasta)
+            path = f"categories/{secure_filename(unique)}"
+
+            # lê o conteúdo do file_storage (stream)
+            data = file_storage.read()
+            # faz o upload com upsert para poder substituir se repetir nome
+            supabase.storage.from_(bucket).upload(
+                path=path,
+                file=data,
+                file_options={"content-type": file_storage.mimetype, "cache-control": "public, max-age=31536000", "upsert": True},
+            )
+            public_url = supabase.storage.from_(bucket).get_public_url(path)
+            return public_url
+    except Exception:
+        # se o storage falhar por qualquer motivo, cai no fallback local
+        pass
+
+    # 2) Fallback: salva localmente em /tmp (NÃO persiste em serverless)
+    upload_dir = current_app.config["UPLOAD_DIR"]
+    os.makedirs(upload_dir, exist_ok=True)
+    dest_path = os.path.join(upload_dir, secure_filename(unique))
+    file_storage.stream.seek(0)  # volta o cursor para o início
+    file_storage.save(dest_path)
+
+    # no fallback local continuamos retornando só o filename
     return unique
 
 # === fim upload ===
