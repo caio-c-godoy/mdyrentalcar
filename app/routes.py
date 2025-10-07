@@ -1,5 +1,4 @@
 ﻿import re
-import psycopg2
 import unicodedata
 from flask import (
     Blueprint, render_template, request, jsonify,
@@ -48,30 +47,20 @@ def _resolve_image_url(v: str) -> str:
     v = v.strip()
     if v.startswith("http://") or v.startswith("https://"):
         return v
-    filename = v.split("/")[-1]
-    try:
-        return url_for("site.uploads", filename=filename, _external=False)
-    except Exception:
-        return f"/uploads/{filename}"
+    # Legado: se veio algo relativo, devolve como está (ou prefixa '/')
+    return v if v.startswith("/") else f"/{v}"
+
 
 
 @site_bp.get("/health/supabase")
 def health_supabase():
-    import os
-    from app.extensions import supabase
     return jsonify({
-        "supabase_client": bool(supabase is not None),
         "envs": {
             "SUPABASE_URL": bool(os.getenv("SUPABASE_URL")),
             "SUPABASE_SERVICE_ROLE_KEY": bool(os.getenv("SUPABASE_SERVICE_ROLE_KEY")),
             "SUPABASE_BUCKET": bool(os.getenv("SUPABASE_BUCKET")),
         }
     }), 200
-
-
-url = os.getenv("SUPABASE_URL")
-key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-supabase: Client = create_client(url, key)
 
 
 # ---------- health & uploads ----------
@@ -85,11 +74,9 @@ from flask import Response
 
 @site_bp.get("/uploads/category/<int:cid>")
 def category_image(cid: int):
-    # usa o ORM (mais simples que psycopg2)
     obj = FeaturedCategory.query.get(cid)
     if not obj or not obj.image:
         return ("", 404)
-    # se quiser detectar mimetype, fixe 'image/jpeg' ou 'image/png'
     return Response(obj.image, mimetype="image/jpeg")
 
 

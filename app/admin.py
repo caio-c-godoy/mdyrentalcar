@@ -215,6 +215,7 @@ def categories_list():
     ).all()
     return render_template("admin_categories.html", categories=cats)
 
+
 @admin.post("/categories/new")
 @requires_auth
 def categories_new():
@@ -222,7 +223,6 @@ def categories_new():
     slug = (request.form.get("slug") or "").strip().lower()
     pos = int(request.form.get("position") or 0)
     active = bool(request.form.get("active"))
-    image_file = request.files.get("image_file")
 
     if not name or not slug:
         flash("Nome e slug são obrigatórios.", "danger")
@@ -230,15 +230,18 @@ def categories_new():
 
     c = FeaturedCategory(name=name, slug=slug, position=pos, active=active)
 
-    rel = _save_uploaded_image(image_file)
-    if rel:
-        # campo no modelo
-        c.image_url = rel
+    file = request.files.get("image_file")
+    if file and getattr(file, "filename", ""):
+        data = file.read()
+        if data:
+            c.image = data
+            c.image_url = None  # desativa caminho antigo
 
     db.session.add(c)
     db.session.commit()
     flash("Categoria adicionada.", "success")
     return redirect(url_for("admin.categories_list"))
+
 
 @admin.post("/categories/<int:cid>/toggle")
 @requires_auth
@@ -247,6 +250,7 @@ def categories_toggle(cid: int):
     c.active = not c.active
     db.session.commit()
     return redirect(url_for("admin.categories_list"))
+
 
 @admin.post("/categories/<int:cid>/delete")
 @requires_auth
@@ -257,6 +261,7 @@ def categories_delete(cid: int):
     flash("Categoria excluída.", "warning")
     return redirect(url_for("admin.categories_list"))
 
+
 @admin.post("/categories/<int:cid>/update")
 @requires_auth
 def categories_update(cid: int):
@@ -266,14 +271,17 @@ def categories_update(cid: int):
     c.position = int(request.form.get("position") or c.position)
     c.active = bool(request.form.get("active")) if "active" in request.form else c.active
 
-    image_file = request.files.get("image_file")
-    rel = _save_uploaded_image(image_file)
-    if rel:
-        c.image_url = rel
+    file = request.files.get("image_file")
+    if file and getattr(file, "filename", ""):
+        data = file.read()
+        if data:
+            c.image = data
+            c.image_url = None  # desativa caminho antigo
 
     db.session.commit()
     flash("Categoria atualizada.", "success")
     return redirect(url_for("admin.categories_list"))
+
 
 # ---------- CRM ----------
 @admin.get("/crm")
