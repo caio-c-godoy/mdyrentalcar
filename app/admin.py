@@ -7,6 +7,7 @@ from functools import wraps
 from urllib.parse import quote
 from .models import FaqItem
 from app.extensions import supabase
+import os, uuid, pathlib
 
 from flask import (
     Blueprint,
