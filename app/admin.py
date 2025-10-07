@@ -30,10 +30,20 @@ from .models import (
     SiteSetting,
 )
 
-# === Upload de imagens (salva em app/static/uploads) ===
-UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "static", "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+# === Upload de imagens (serverless-friendly) ===
+# Em Vercel, somente /tmp é gravável. Permite override via env: UPLOAD_DIR
+TMP_ROOT = os.environ.get("TMPDIR") or "/tmp"
+DEFAULT_UPLOAD_DIR = os.path.join(TMP_ROOT, "uploads")
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", DEFAULT_UPLOAD_DIR)
+
+try:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+except OSError:
+    # Em teoria não deve falhar em /tmp; se falhar, ignora para não quebrar a função
+    pass
+
 ALLOWED_IMG_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+
 
 
 def _save_uploaded_image(file_storage) -> str:
