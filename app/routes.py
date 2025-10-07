@@ -79,7 +79,6 @@ supabase: Client = create_client(url, key)
 def health():
     return "ok", 200
 
-
 @site_bp.get("/uploads/<filename>")
 def uploads(filename):
     """

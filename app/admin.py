@@ -103,6 +103,7 @@ def _save_uploaded_image(file_storage) -> str:
         return ""
 
 
+
 def get_image_from_db(category_name):
     try:
         connection = psycopg2.connect(
