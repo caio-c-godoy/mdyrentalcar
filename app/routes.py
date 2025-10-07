@@ -85,31 +85,28 @@ def uploads(filename):
     Serve os arquivos diretamente do Supabase, se disponível.
     """
     try:
-        # Crie o cliente do Supabase
+        # Cria o cliente do Supabase
         url = os.getenv("SUPABASE_URL")
         key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         supabase = create_client(url, key)
-        
-        # Verifique se o cliente foi criado corretamente
+
+        # Verifique se o cliente foi inicializado corretamente
         if not supabase:
             return jsonify({"error": "Falha ao inicializar cliente do Supabase"}), 500
 
-        print(f"Tentando acessar o arquivo: {filename}")
-        
         # Obtenha a URL pública do arquivo no Supabase
         file_url = supabase.storage.from_("mdy-uploads").get_public_url(filename)
-        print(f"URL do arquivo: {file_url}")
-
+        
         # Verifique se o arquivo existe
-        if not file_url or "publicURL" not in file_url:
-            print(f"Arquivo não encontrado: {filename}")
+        if not file_url:
             return jsonify({"error": "Arquivo não encontrado"}), 404
 
-        return jsonify({"file_url": file_url["publicURL"]})
+        return jsonify({"file_url": file_url})  # Retorna a URL pública
     except Exception as e:
         # Caso ocorra um erro, retorne uma mensagem
         print(f"Erro ao acessar o arquivo: {e}")
         return jsonify({"error": f"Erro ao buscar o arquivo: {str(e)}"}), 500
+
 
 
 # ---------- páginas ----------
