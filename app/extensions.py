@@ -9,24 +9,23 @@ from typing import Any
 supabase: Any = None
 
 def init_supabase():
-    """
-    Inicializa o cliente Supabase se o pacote e as ENVs existirem.
-    Em produção, use SUPABASE_SERVICE_ROLE_KEY apenas no backend.
-    """
     global supabase
     try:
-        from supabase import create_client  # import lazy p/ não quebrar se pacote não instalado
-    except Exception:
+        from supabase import create_client
+        import supabase as sup_pkg
+        print("SUPABASE_PY_VERSION=", getattr(sup_pkg, "__version__", "unknown"))
+    except Exception as e:
+        print(f"SUPABASE_IMPORT_ERROR: {e!r}")
         supabase = None
         return None
-
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    ...
     if url and key:
         try:
             supabase = create_client(url, key)
-        except Exception:
+            print("SUPABASE_CLIENT=OK")
+        except Exception as e:
+            print(f"SUPABASE_CLIENT_ERROR: {e!r}")
             supabase = None
     else:
+        print("SUPABASE_ENVS_MISSING", {"url": bool(url), "key": bool(key)})
         supabase = None
-    return supabase

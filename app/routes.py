@@ -40,20 +40,30 @@ def _slug_key(s: str) -> str:
 
 
 def _resolve_image_url(v: str) -> str:
-    """
-    Converte o que estiver salvo no banco para uma URL servível.
-    - Se já for http(s), retorna como está (Supabase Storage).
-    - Se vier 'uploads/arquivo.jpg' ou só 'arquivo.jpg', serve pela rota /uploads.
-    - Se vier vazio, retorna "".
-    """
     if not v:
         return ""
     v = v.strip()
     if v.startswith("http://") or v.startswith("https://"):
         return v
     filename = v.split("/")[-1]
-    return f"https://<supabase-project-id>.supabase.co/storage/v1/object/public/mdy-uploads/{filename}"
+    try:
+        return url_for("site.uploads", filename=filename, _external=False)
+    except Exception:
+        return f"/uploads/{filename}"
 
+
+@site_bp.get("/health/supabase")
+def health_supabase():
+    import os
+    from app.extensions import supabase
+    return jsonify({
+        "supabase_client": bool(supabase is not None),
+        "envs": {
+            "SUPABASE_URL": bool(os.getenv("SUPABASE_URL")),
+            "SUPABASE_SERVICE_ROLE_KEY": bool(os.getenv("SUPABASE_SERVICE_ROLE_KEY")),
+            "SUPABASE_BUCKET": bool(os.getenv("SUPABASE_BUCKET")),
+        }
+    }), 200
 
 
 # ---------- health & uploads ----------
