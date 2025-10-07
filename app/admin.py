@@ -62,14 +62,15 @@ def _save_uploaded_image(file_storage) -> str:
 
     unique = f"{uuid.uuid4().hex}{ext}"
 
-    # DEFINIR AS CHAVES AQUI DIRETAMENTE NO CÓDIGO
-    SUPABASE_URL = 'https://btvfcbtaqddutipmhpkf.supabase.co'  # Exemplo de URL
-    SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0dmZjYnRhcWRkdXRpcG1ocGtmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTg0Mjg4NSwiZXhwIjoyMDc1NDE4ODg1fQ.oX42yzGzMYOmi0BN1JpREvX3BTPc0z5YHIwQLpBfh1s' 
-    SUPABASE_BUCKET = 'mdy-uploads'
+    # Definir as chaves diretamente no código para teste
+    SUPABASE_URL = 'https://btvfcbtaqddutipmhpkf.supabase.co'  # URL do Supabase
+    SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0dmZjYnRhcWRkdXRpcG1ocGtmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTg0Mjg4NSwiZXhwIjoyMDc1NDE4ODg1fQ.oX42yzGzMYOmi0BN1JpREvX3BTPc0z5YHIwQLpBfh1s'  # Exemplo de chave
+    SUPABASE_BUCKET = 'mdy-uploads'  # Nome do bucket
 
-    # Criação do cliente do Supabase
+    # Criando o cliente do Supabase com as variáveis definidas
     supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
+    # Expondo as variáveis para debugar
     print(f"SUPABASE_URL: {SUPABASE_URL}")
     print(f"SUPABASE_SERVICE_ROLE_KEY: {SUPABASE_SERVICE_ROLE_KEY}")
     print(f"SUPABASE_BUCKET: {SUPABASE_BUCKET}")
@@ -88,14 +89,15 @@ def _save_uploaded_image(file_storage) -> str:
                 "content-type": file_storage.mimetype or "application/octet-stream",
                 "contentType": file_storage.mimetype or "application/octet-stream",
             }
+
             # Envio para o Supabase
             supabase.storage.from_(SUPABASE_BUCKET).upload(
                 path=path,
                 file=data,
                 file_options=file_opts,
-                upsert=True,
+                upsert=True,  # Aqui fora!
             )
-            # Verifique se o arquivo foi carregado corretamente
+            # Verificando se o arquivo foi carregado corretamente
             public_url = supabase.storage.from_(SUPABASE_BUCKET).get_public_url(path)
             print(f"UPLOAD→ Sucesso! URL pública gerada: {public_url}")
             return public_url or ""
@@ -106,6 +108,7 @@ def _save_uploaded_image(file_storage) -> str:
             )
     except Exception as e:
         print(f"UPLOAD→ Falha ao tentar fazer upload para o Supabase: {e!r}")
+        return ""
 
     # 2) Fallback local (/tmp)
     try:
@@ -255,231 +258,3 @@ def categories_update(cid: int):
     db.session.commit()
     flash("Categoria atualizada.", "success")
     return redirect(url_for("admin.categories_list"))
-
-# ---------- CRM ----------
-@admin.get("/crm")
-@requires_auth
-def crm_page():
-    rows = QuoteRequest.query.order_by(QuoteRequest.created_at.desc()).all()
-    return render_template("crm_quotes.html", items=rows)
-
-@admin.get("/crm/cotacoes")
-@requires_auth
-def crm_cotacoes():
-    return crm_page()
-
-# Link WhatsApp (cliente)
-@admin.get("/crm/cotacoes/<int:qid>/whatsapp-link")
-@requires_auth
-def crm_cotacao_whatsapp_link(qid: int):
-    r = QuoteRequest.query.get_or_404(qid)
-    d = re.sub(r"\D+", "", r.phone or "")
-    if d and not d.startswith("55") and len(d) in (10, 11):
-        d = "55" + d
-    msg = (
-        f"Olá {(r.name or '').split()[0]}, tudo bem?\n\n"
-        f"Recebemos sua solicitação de reserva na MDY. Seguem os detalhes:\n"
-        f"• Retirada: {r.pickup_place} — {r.pickup_date or 'data a combinar'}\n"
-        f"• Devolução: {r.drop_place} — {r.drop_date or 'data a combinar'}\n"
-        f"• Categoria: {r.category}\n\n"
-        f"Podemos dar sequência à sua reserva?"
-    )
-    url = f"https://wa.me/{d}?text={quote(msg, safe='')}" if d else f"https://wa.me/?text={quote(msg, safe='')}"
-    return jsonify({"ok": True, "url": url})
-
-@admin.get("/crm/cotacoes/<int:qid>/whatsapp")
-@requires_auth
-def crm_cotacao_whatsapp_redirect(qid: int):
-    r = QuoteRequest.query.get_or_404(qid)
-    d = re.sub(r"\D+", "", r.phone or "")
-    if d and not d.startswith("55") and len(d) in (10, 11):
-        d = "55" + d
-    msg = (
-        f"Olá {(r.name or '').split()[0]}, tudo bem?\n\n"
-        f"Recebemos sua solicitação de reserva na MDY. Seguem os detalhes:\n"
-        f"• Retirada: {r.pickup_place} — {r.pickup_date or 'data a combinar'}\n"
-        f"• Devolução: {r.drop_place} — {r.drop_date or 'data a combinar'}\n"
-        f"• Categoria: {r.category}\n\n"
-        f"Podemos dar sequência à reserva?"
-    )
-    url = f"https://wa.me/{d}?text={quote(msg, safe='')}" if d else f"https://wa.me/?text={quote(msg, safe='')}"
-    return redirect(url)
-
-# ---------- Localidades ----------
-@admin.get("/locations")
-@requires_auth
-def locations_list():
-    rows = Location.query.order_by(Location.position.asc(), Location.name.asc()).all()
-    return render_template("admin_locations.html", locations=rows)
-
-@admin.post("/locations/new")
-@requires_auth
-def locations_new():
-    name = (request.form.get("name") or "").strip()
-    pos = int(request.form.get("position") or 0)
-    if not name:
-        flash("Nome é obrigatório.", "danger")
-        return redirect(url_for("admin.locations_list"))
-    existing = Location.query.filter_by(name=name).first()
-    if existing:
-        flash("Já existe uma localidade com esse nome.", "warning")
-        return redirect(url_for("admin.locations_list"))
-    db.session.add(Location(name=name, position=pos, active=True))
-    db.session.commit()
-    flash("Localidade adicionada.", "success")
-    return redirect(url_for("admin.locations_list"))
-
-@admin.post("/locations/<int:lid>/update")
-@requires_auth
-def locations_update(lid: int):
-    loc = Location.query.get_or_404(lid)
-    loc.name = (request.form.get("name") or loc.name).strip()
-    loc.position = int(request.form.get("position") or loc.position)
-    db.session.commit()
-    flash("Localidade atualizada.", "success")
-    return redirect(url_for("admin.locations_list"))
-
-@admin.post("/locations/<int:lid>/toggle")
-@requires_auth
-def locations_toggle(lid: int):
-    loc = Location.query.get_or_404(lid)
-    loc.active = not loc.active
-    db.session.commit()
-    return redirect(url_for("admin.locations_list"))
-
-@admin.post("/locations/<int:lid>/delete")
-@requires_auth
-def locations_delete(lid: int):
-    loc = Location.query.get_or_404(lid)
-    db.session.delete(loc)
-    db.session.commit()
-    flash("Localidade excluída.", "warning")
-    return redirect(url_for("admin.locations_list"))
-
-# ---------- Páginas legais ----------
-@admin.get("/legal")
-@requires_auth
-def admin_legal_get():
-    privacy = LegalPage.get_or_create("privacy", "Política de Privacidade")
-    terms = LegalPage.get_or_create("terms", "Termos de Uso")
-    return render_template("admin_legal.html", privacy=privacy, terms=terms)
-
-@admin.post("/legal")
-@requires_auth
-def admin_legal_post():
-    privacy_html = request.form.get("privacy_html", "")
-    terms_html = request.form.get("terms_html", "")
-    privacy = LegalPage.get_or_create("privacy", "Política de Privacidade")
-    terms = LegalPage.get_or_create("terms", "Termos de Uso")
-    privacy.html = privacy_html
-    terms.html = terms_html
-    db.session.commit()
-    flash("Páginas salvas.", "success")
-    return redirect(url_for("admin.admin_legal_get"))
-
-@admin.route("/legal/<key>", methods=["GET", "POST"])
-@requires_auth
-def admin_legal_edit(key):
-    if key not in ("privacy", "terms"):
-        flash("Página inválida.", "danger")
-        return redirect(url_for("admin.admin_legal_get"))
-
-    default_title = "Política de Privacidade" if key == "privacy" else "Termos de Uso"
-    page = LegalPage.get_or_create(key, default_title)
-
-    if request.method == "POST":
-        page.title = (request.form.get("title") or page.title).strip() or page.title
-        page.html = request.form.get("html", "")
-        db.session.commit()
-        flash("Página atualizada!", "success")
-        return redirect(url_for("admin.admin_legal_edit", key=key))
-
-    return render_template("legal_edit.html", page=page)
-
-
-@admin.get('/faq')
-@requires_auth
-def admin_faq_list():
-    items = FaqItem.query.order_by(FaqItem.position.asc(), FaqItem.id.asc()).all()
-    return render_template('admin_faq.html', items=items)
-
-@admin.post('/faq/new')
-@requires_auth
-def admin_faq_new():
-    q = (request.form.get('question') or '').strip()
-    a = (request.form.get('answer') or '').strip()
-    pos = int(request.form.get('position') or 0)
-    active = bool(request.form.get('active'))
-    if not q:
-        flash('Informe a pergunta.', 'danger')
-        return redirect(url_for('admin.admin_faq_list'))
-    item = FaqItem(question=q, answer=a, position=pos, active=active)
-    db.session.add(item)
-    db.session.commit()
-    flash('Pergunta adicionada.', 'success')
-    return redirect(url_for('admin.admin_faq_list'))
-
-@admin.post('/faq/<int:fid>/update')
-@requires_auth
-def admin_faq_update(fid:int):
-    item = FaqItem.query.get_or_404(fid)
-    item.question = (request.form.get('question') or item.question).strip()
-    item.answer = (request.form.get('answer') or item.answer).strip()
-    item.position = int(request.form.get('position') or item.position)
-    if 'active' in request.form:
-        item.active = bool(request.form.get('active'))
-    db.session.commit()
-    flash('Pergunta atualizada.', 'success')
-    return redirect(url_for('admin.admin_faq_list'))
-
-@admin.post('/faq/<int:fid>/toggle')
-@requires_auth
-def admin_faq_toggle(fid:int):
-    item = FaqItem.query.get_or_404(fid)
-    item.active = not item.active
-    db.session.commit()
-    return redirect(url_for('admin.admin_faq_list'))
-
-@admin.post('/faq/<int:fid>/delete')
-@requires_auth
-def admin_faq_delete(fid:int):
-    item = FaqItem.query.get_or_404(fid)
-    db.session.delete(item)
-    db.session.commit()
-    flash('Pergunta removida.', 'warning')
-    return redirect(url_for('admin.admin_faq_list'))
-
-
-@admin.get("/faq/init")
-@requires_auth
-def admin_faq_init():
-    try:
-        db.create_all()
-        flash("Tabelas criadas/atualizadas.", "success")
-    except Exception as e:
-        flash(f"Erro ao criar tabelas: {e}", "danger")
-    return redirect(url_for("admin.admin_faq_list"))
-
-
-
-@admin.route('/test-upload', methods=["POST"])
-def test_upload():
-    """
-    Endpoint de teste para fazer o upload de uma imagem diretamente no Vercel.
-    """
-    file_storage = request.files.get("file")
-    if not file_storage:
-        return jsonify({"error": "Nenhum arquivo enviado"}), 400
-    
-    result = _save_uploaded_image(file_storage)
-    if result:
-        return jsonify({"success": True, "url": result}), 200
-    return jsonify({"error": "Falha ao enviar o arquivo"}), 500
-
-@admin.get('/test-env')
-def test_env_vars():
-    return jsonify({
-        "SUPABASE_URL": os.getenv("SUPABASE_URL"),
-        "SUPABASE_SERVICE_ROLE_KEY": os.getenv("SUPABASE_SERVICE_ROLE_KEY"),
-        "SUPABASE_BUCKET": os.getenv("SUPABASE_BUCKET")
-    })
