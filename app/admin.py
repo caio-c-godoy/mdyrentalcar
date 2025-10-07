@@ -9,8 +9,6 @@ from app.extensions import supabase
 import os
 import uuid
 import pathlib
-from supabase import create_client
-
 
 from flask import (
     Blueprint,
@@ -63,22 +61,18 @@ def _save_uploaded_image(file_storage) -> str:
         return ""
 
     unique = f"{uuid.uuid4().hex}{ext}"
+    bucket = os.getenv("SUPABASE_BUCKET")
+    url = os.getenv("SUPABASE_URL")
+    role = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-    # DEFINIR AS CHAVES AQUI DIRETAMENTE NO CÓDIGO
-    SUPABASE_URL = 'https://btvfcbtaqddutipmhpkf.supabase.co'  # Exemplo de URL
-    SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0dmZjYnRhcWRkdXRpcG1ocGtmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTg0Mjg4NSwiZXhwIjoyMDc1NDE4ODg1fQ.oX42yzGzMYOmi0BN1JpREvX3BTPc0z5YHIwQLpBfh1s' 
-    SUPABASE_BUCKET = 'mdy-uploads'
-
-    # Criação do cliente do Supabase
-    supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-
-    print(f"SUPABASE_URL: {SUPABASE_URL}")
-    print(f"SUPABASE_SERVICE_ROLE_KEY: {SUPABASE_SERVICE_ROLE_KEY}")
-    print(f"SUPABASE_BUCKET: {SUPABASE_BUCKET}")
+    # Verificar e registrar as variáveis de ambiente
+    print(f"SUPABASE_URL: {url}")
+    print(f"SUPABASE_SERVICE_ROLE_KEY: {role}")
+    print(f"SUPABASE_BUCKET: {bucket}")
 
     # 1) Supabase (persistente)
     try:
-        if supabase is not None and SUPABASE_BUCKET and SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+        if supabase is not None and bucket and url and role:
             path = f"categories/{secure_filename(unique)}"
             data = file_storage.read()
 
@@ -91,20 +85,20 @@ def _save_uploaded_image(file_storage) -> str:
                 "contentType": file_storage.mimetype or "application/octet-stream",
             }
             # Envio para o Supabase
-            supabase.storage.from_(SUPABASE_BUCKET).upload(
+            supabase.storage.from_(bucket).upload(
                 path=path,
                 file=data,
                 file_options=file_opts,
                 upsert=True,
             )
             # Verifique se o arquivo foi carregado corretamente
-            public_url = supabase.storage.from_(SUPABASE_BUCKET).get_public_url(path)
+            public_url = supabase.storage.from_(bucket).get_public_url(path)
             print(f"UPLOAD→ Sucesso! URL pública gerada: {public_url}")
             return public_url or ""
         else:
             print(
                 "UPLOAD→ Erro: Supabase ou configuração do bucket está ausente."
-                f" (supabase={supabase is not None}, bucket={SUPABASE_BUCKET}, url={'ok' if SUPABASE_URL else 'missing'}, role={'ok' if SUPABASE_SERVICE_ROLE_KEY else 'missing'})"
+                f" (supabase={supabase is not None}, bucket={bucket}, url={'ok' if url else 'missing'}, role={'ok' if role else 'missing'})"
             )
     except Exception as e:
         print(f"UPLOAD→ Falha ao tentar fazer upload para o Supabase: {e!r}")
@@ -121,7 +115,6 @@ def _save_uploaded_image(file_storage) -> str:
         print(f"UPLOAD→ Fallback falhou: {e!r}")
         return ""
 
-
 # === fim upload ===
 
 
@@ -131,6 +124,8 @@ admin = Blueprint(
     url_prefix="/admin",
     template_folder="templates",  # Usa a pasta global app/templates
 )
+
+
 
 
 # ---------- Auth ----------
@@ -463,3 +458,25 @@ def admin_faq_init():
     return redirect(url_for("admin.admin_faq_list"))
 
 
+
+@admin.route('/test-upload', methods=["POST"])
+def test_upload():
+    """
+    Endpoint de teste para fazer o upload de uma imagem diretamente no Vercel.
+    """
+    file_storage = request.files.get("file")
+    if not file_storage:
+        return jsonify({"error": "Nenhum arquivo enviado"}), 400
+    
+    result = _save_uploaded_image(file_storage)
+    if result:
+        return jsonify({"success": True, "url": result}), 200
+    return jsonify({"error": "Falha ao enviar o arquivo"}), 500
+
+@admin.get('/test-env')
+def test_env_vars():
+    return jsonify({
+        "SUPABASE_URL": os.getenv("SUPABASE_URL"),
+        "SUPABASE_SERVICE_ROLE_KEY": os.getenv("SUPABASE_SERVICE_ROLE_KEY"),
+        "SUPABASE_BUCKET": os.getenv("SUPABASE_BUCKET")
+    })
