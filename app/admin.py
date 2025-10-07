@@ -1,14 +1,11 @@
 ﻿from __future__ import annotations
-import psycopg2
+
+import os
 import re
 import time
 from functools import wraps
 from urllib.parse import quote
 from .models import FaqItem
-from app.extensions import supabase
-import os
-import uuid
-import pathlib
 
 from flask import (
     Blueprint,
@@ -26,116 +23,35 @@ from werkzeug.utils import secure_filename
 from .extensions import db
 from sqlalchemy.exc import ProgrammingError, OperationalError
 from .models import (
-    FeaturedCategory,   # Usamos como "Carros"
+    FeaturedCategory,   # usamos como "Carros"
     LegalPage,
     Location,
     QuoteRequest,
     SiteSetting,
 )
 
-# === Upload de imagens (serverless-friendly) ===
-# Em Vercel, somente /tmp é gravável. Permite override via env: UPLOAD_DIR
-TMP_ROOT = os.environ.get("TMPDIR") or "/tmp"
-DEFAULT_UPLOAD_DIR = os.path.join(TMP_ROOT, "uploads")
-UPLOAD_DIR = os.environ.get("UPLOAD_DIR", DEFAULT_UPLOAD_DIR)
-
-try:
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-except OSError:
-    # Em teoria não deve falhar em /tmp; se falhar, ignora para não quebrar a função
-    pass
-
+# === Upload de imagens (salva em app/static/uploads) ===
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "static", "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_IMG_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
-import psycopg2
-from werkzeug.utils import secure_filename
-import uuid
-import pathlib
 
 def _save_uploaded_image(file_storage) -> str:
     """
-    Função para salvar imagem no banco de dados (PostgreSQL).
+    Recebe um FileStorage (campo 'image_file'), valida e salva.
+    Retorna caminho relativo a 'static/' (ex.: 'uploads/123_nome.jpg') ou "".
     """
     if not file_storage or not getattr(file_storage, "filename", ""):
-        print("UPLOAD→ Nenhum arquivo recebido!")
         return ""
-
-    ext = pathlib.Path(file_storage.filename).suffix.lower()
+    name = secure_filename(file_storage.filename)
+    _, ext = os.path.splitext(name)
+    ext = ext.lower()
     if ext not in ALLOWED_IMG_EXTS:
-        print(f"UPLOAD→ Extensão não permitida: {ext}")
         return ""
-
-    unique = f"{uuid.uuid4().hex}{ext}"
-
-    # Conectar ao banco de dados PostgreSQL
-    try:
-        connection = psycopg2.connect(
-            dbname="your_db_name",  # Substitua com o nome do seu banco de dados
-            user="your_db_user",  # Substitua com o usuário do banco de dados
-            password="your_db_password",  # Substitua com a senha do banco de dados
-            host="your_db_host",  # Substitua com o host do banco de dados
-            port="your_db_port"  # Substitua com a porta do banco de dados
-        )
-        cursor = connection.cursor()
-
-        # Lendo o arquivo da imagem e convertendo para binário
-        file_binary = file_storage.read()
-
-        # Inserindo a imagem na tabela 'featured_categories'
-        query = """
-        UPDATE featured_categories
-        SET image = %s
-        WHERE name = %s  -- Use o nome ou outro identificador da categoria
-        """
-        cursor.execute(query, (psycopg2.Binary(file_binary), "Categoria Nome"))
-
-        # Commitando a transação
-        connection.commit()
-
-        cursor.close()
-        connection.close()
-
-        print("UPLOAD→ Imagem salva no banco de dados com sucesso!")
-        return f"Categoria com imagem {unique} atualizada com sucesso."
-
-    except Exception as e:
-        print(f"UPLOAD→ Erro ao tentar salvar a imagem no banco de dados: {e!r}")
-        return ""
-
-
-def get_image_from_db(category_name):
-    try:
-        connection = psycopg2.connect(
-            dbname="your_db_name", 
-            user="your_db_user", 
-            password="your_db_password", 
-            host="your_db_host", 
-            port="your_db_port"
-        )
-        cursor = connection.cursor()
-
-        # Recuperando a imagem (BLOB) do banco de dados
-        query = "SELECT image FROM categories WHERE name = %s"
-        cursor.execute(query, (category_name,))
-        result = cursor.fetchone()
-
-        if result:
-            image_data = result[0]  # A imagem será um objeto binário
-            # Aqui, você pode salvar a imagem localmente ou retornar sua URL
-            with open("output_image.jpg", "wb") as f:
-                f.write(image_data)
-
-            print("Imagem recuperada com sucesso!")
-        else:
-            print("Imagem não encontrada para a categoria.")
-
-        cursor.close()
-        connection.close()
-
-    except Exception as e:
-        print(f"Erro ao recuperar a imagem do banco de dados: {e!r}")
-
-
+    unique = f"{int(time.time())}_{name}"
+    dest = os.path.join(UPLOAD_DIR, unique)
+    file_storage.save(dest)
+    return f"uploads/{unique}"
 # === fim upload ===
 
 
@@ -143,11 +59,8 @@ admin = Blueprint(
     "admin",
     __name__,
     url_prefix="/admin",
-    template_folder="templates",  # Usa a pasta global app/templates
+    template_folder="templates",  # usa a pasta global app/templates
 )
-
-
-
 
 # ---------- Auth ----------
 def check_auth(username: str | None, password: str | None) -> bool:
@@ -477,20 +390,4 @@ def admin_faq_init():
     except Exception as e:
         flash(f"Erro ao criar tabelas: {e}", "danger")
     return redirect(url_for("admin.admin_faq_list"))
-
-
-
-@admin.route('/test-upload', methods=["POST"])
-def test_upload():
-    """
-    Endpoint de teste para fazer o upload de uma imagem diretamente no Vercel.
-    """
-    file_storage = request.files.get("file")
-    if not file_storage:
-        return jsonify({"error": "Nenhum arquivo enviado"}), 400
-    
-    result = _save_uploaded_image(file_storage)
-    if result:
-        return jsonify({"success": True, "url": result}), 200
-    return jsonify({"error": "Falha ao enviar o arquivo"}), 500
 
