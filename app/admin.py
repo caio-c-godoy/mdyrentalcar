@@ -115,7 +115,6 @@ def _save_uploaded_image(file_storage) -> str:
         print(f"UPLOAD→ Fallback falhou: {e!r}")
         return ""
 
-
 # === fim upload ===
 
 
@@ -125,6 +124,20 @@ admin = Blueprint(
     url_prefix="/admin",
     template_folder="templates",  # Usa a pasta global app/templates
 )
+
+@admin.route('/test-upload', methods=["POST"])
+def test_upload():
+    """
+    Endpoint de teste para fazer o upload de uma imagem diretamente no Vercel.
+    """
+    file_storage = request.files.get("file")
+    if not file_storage:
+        return jsonify({"error": "Nenhum arquivo enviado"}), 400
+    
+    result = _save_uploaded_image(file_storage)
+    if result:
+        return jsonify({"success": True, "url": result}), 200
+    return jsonify({"error": "Falha ao enviar o arquivo"}), 500
 
 
 # ---------- Auth ----------
