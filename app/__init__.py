@@ -8,7 +8,7 @@ from .extensions import db
 from .routes import site_bp
 from .admin import admin
 from . import models  # <- IMPORTANTE: garante que todos os models sejam registrados
-from app.extensions import init_supabase
+
 
 
 def create_app() -> Flask:
@@ -32,6 +32,8 @@ def create_app() -> Flask:
 
     # Extensões
     db.init_app(app)
+    
+    from app.extensions import init_supabase
     init_supabase()
 
 # --- Uploads: em serverless só /tmp é gravável ---
