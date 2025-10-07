@@ -148,22 +148,18 @@
             <input name="position" type="number" class="form-control" value="{{ c.position or 0 }}">
           </div>
 
-          {% if c.image_url %}
-            {% set img = c.image_url %}
-            {% if img.startswith('http') %}
-              <div class="ratio ratio-16x9 mb-2">
-                <img class="rounded" src="{{ img }}" alt="{{ c.name }}" style="object-fit:cover">
-              </div>
-              <div class="small text-muted text-break mb-2">{{ img }}</div>
-            {% else %}
-              <div class="ratio ratio-16x9 mb-2">
-                <img class="rounded"
-                     src="{{ url_for('site.uploads', filename=img) }}"
-                     alt="{{ c.name }}" style="object-fit:cover">
-              </div>
-              <div class="small text-muted text-break mb-2">{{ img }}</div>
-            {% endif %}
+          <td>
+          {% if c.image %}
+            <div class="small mb-1">
+              Atual: <span class="text-break">Imagem armazenada no banco</span>
+            </div>
+            <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
+              <img class="rounded" src="{{ url_for('site.uploads', filename=c.id) }}" alt="{{ c.name }}" style="object-fit:cover">
+            </div>
           {% endif %}
+          <input type="file" name="image_file" accept="image/*" class="form-control" form="f{{ c.id }}">
+        </td>
+
           <div class="mb-3">
             <label class="form-label small">Imagem (upload)</label>
             <input type="file" name="image_file" accept="image/*" class="form-control">
