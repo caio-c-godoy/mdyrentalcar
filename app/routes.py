@@ -17,7 +17,9 @@ site_bp = Blueprint("site", __name__)
 def digits_only(s: str) -> str:
     return re.sub(r"\D+", "", s or "")
 
-
+@site_bp.get("/health")
+def health():
+    return "ok", 200
 
 def _slug_key(s: str) -> str:
     """
