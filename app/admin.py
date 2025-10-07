@@ -6,7 +6,9 @@ from functools import wraps
 from urllib.parse import quote
 from .models import FaqItem
 from app.extensions import supabase
-import os, uuid, pathlib
+import os
+import uuid
+import pathlib
 
 from flask import (
     Blueprint,
@@ -24,7 +26,7 @@ from werkzeug.utils import secure_filename
 from .extensions import db
 from sqlalchemy.exc import ProgrammingError, OperationalError
 from .models import (
-    FeaturedCategory,   # usamos como "Carros"
+    FeaturedCategory,   # Usamos como "Carros"
     LegalPage,
     Location,
     QuoteRequest,
@@ -46,11 +48,9 @@ except OSError:
 ALLOWED_IMG_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
 def _save_uploaded_image(file_storage) -> str:
-    import uuid, pathlib, os
-    from werkzeug.utils import secure_filename
-    from flask import current_app
-    from app.extensions import supabase
-
+    """
+    Função para salvar imagem, tentando enviar para o Supabase e, se falhar, salvando localmente.
+    """
     if not file_storage or not getattr(file_storage, "filename", ""):
         print("UPLOAD→ Nenhum arquivo recebido!")
         return ""
@@ -81,6 +81,7 @@ def _save_uploaded_image(file_storage) -> str:
                 "content-type": file_storage.mimetype or "application/octet-stream",
                 "contentType": file_storage.mimetype or "application/octet-stream",
             }
+            # Envio para o Supabase
             supabase.storage.from_(bucket).upload(
                 path=path,
                 file=data,
@@ -118,8 +119,9 @@ admin = Blueprint(
     "admin",
     __name__,
     url_prefix="/admin",
-    template_folder="templates",  # usa a pasta global app/templates
+    template_folder="templates",  # Usa a pasta global app/templates
 )
+
 
 # ---------- Auth ----------
 def check_auth(username: str | None, password: str | None) -> bool:
