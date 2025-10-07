@@ -65,6 +65,7 @@ def _save_uploaded_image(file_storage) -> str:
     url = os.getenv("SUPABASE_URL")
     role = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
+    # Verificar e registrar as variáveis de ambiente
     print(f"SUPABASE_URL: {url}")
     print(f"SUPABASE_SERVICE_ROLE_KEY: {role}")
     print(f"SUPABASE_BUCKET: {bucket}")
@@ -74,6 +75,8 @@ def _save_uploaded_image(file_storage) -> str:
         if supabase is not None and bucket and url and role:
             path = f"categories/{secure_filename(unique)}"
             data = file_storage.read()
+
+            print(f"UPLOAD→ Tentando fazer upload para o Supabase com o caminho: {path}")
 
             # Tenta fazer o upload
             file_opts = {
@@ -86,8 +89,9 @@ def _save_uploaded_image(file_storage) -> str:
                 path=path,
                 file=data,
                 file_options=file_opts,
-                upsert=True,  # Aqui fora!
+                upsert=True,
             )
+            # Verifique se o arquivo foi carregado corretamente
             public_url = supabase.storage.from_(bucket).get_public_url(path)
             print(f"UPLOAD→ Sucesso! URL pública gerada: {public_url}")
             return public_url or ""
