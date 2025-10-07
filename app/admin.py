@@ -46,10 +46,6 @@ except OSError:
 ALLOWED_IMG_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
 def _save_uploaded_image(file_storage) -> str:
-    """
-    Tenta enviar ao Supabase Storage e retorna a URL pública.
-    Se não rolar, cai no fallback local (/tmp) e retorna apenas o filename.
-    """
     import uuid, pathlib, os
     from werkzeug.utils import secure_filename
     from flask import current_app
@@ -69,19 +65,23 @@ def _save_uploaded_image(file_storage) -> str:
     url = os.getenv("SUPABASE_URL")
     role = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-    # 1) Tenta Supabase (persistente)
+    # 1) Supabase (persistente)
     try:
         if supabase is not None and bucket and url and role:
             path = f"categories/{secure_filename(unique)}"
             data = file_storage.read()
+
+            # ⚠️ upsert é argumento separado; content-type pode variar de chave
+            file_opts = {
+                "cache-control": "public, max-age=31536000",
+                "content-type": file_storage.mimetype or "application/octet-stream",
+                "contentType": file_storage.mimetype or "application/octet-stream",
+            }
             supabase.storage.from_(bucket).upload(
                 path=path,
                 file=data,
-                file_options={
-                    "content-type": file_storage.mimetype or "application/octet-stream",
-                    "cache-control": "public, max-age=31536000",
-                    "upsert": True,
-                },
+                file_options=file_opts,
+                upsert=True,        # ← aqui fora
             )
             public_url = supabase.storage.from_(bucket).get_public_url(path)
             print(f"UPLOAD→ storage OK: {public_url}")
@@ -94,7 +94,7 @@ def _save_uploaded_image(file_storage) -> str:
     except Exception as e:
         print(f"UPLOAD→ storage FALHOU: {e!r}")
 
-    # 2) Fallback local (/tmp) — não persiste, mas evita erro
+    # 2) Fallback local (/tmp)
     try:
         upload_dir = current_app.config.get("UPLOAD_DIR")
         os.makedirs(upload_dir, exist_ok=True)
