@@ -45,12 +45,6 @@ except OSError:
 
 ALLOWED_IMG_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
-# app/admin.py
-print(f"SUPABASE_URL: {os.getenv('SUPABASE_URL')}")
-print(f"SUPABASE_SERVICE_ROLE_KEY: {os.getenv('SUPABASE_SERVICE_ROLE_KEY')}")
-print(f"SUPABASE_BUCKET: {os.getenv('SUPABASE_BUCKET')}")
-
-
 def _save_uploaded_image(file_storage) -> str:
     import uuid, pathlib, os
     from werkzeug.utils import secure_filename
@@ -58,12 +52,12 @@ def _save_uploaded_image(file_storage) -> str:
     from app.extensions import supabase
 
     if not file_storage or not getattr(file_storage, "filename", ""):
-        print("UPLOAD→ nenhum arquivo recebido")
+        print("UPLOAD→ Nenhum arquivo recebido!")
         return ""
 
     ext = pathlib.Path(file_storage.filename).suffix.lower()
     if ext not in ALLOWED_IMG_EXTS:
-        print(f"UPLOAD→ extensão não permitida: {ext}")
+        print(f"UPLOAD→ Extensão não permitida: {ext}")
         return ""
 
     unique = f"{uuid.uuid4().hex}{ext}"
@@ -71,13 +65,17 @@ def _save_uploaded_image(file_storage) -> str:
     url = os.getenv("SUPABASE_URL")
     role = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
+    print(f"SUPABASE_URL: {url}")
+    print(f"SUPABASE_SERVICE_ROLE_KEY: {role}")
+    print(f"SUPABASE_BUCKET: {bucket}")
+
     # 1) Supabase (persistente)
     try:
         if supabase is not None and bucket and url and role:
             path = f"categories/{secure_filename(unique)}"
             data = file_storage.read()
 
-            # ⚠️ upsert é argumento separado; content-type pode variar de chave
+            # Tenta fazer o upload
             file_opts = {
                 "cache-control": "public, max-age=31536000",
                 "content-type": file_storage.mimetype or "application/octet-stream",
@@ -87,34 +85,31 @@ def _save_uploaded_image(file_storage) -> str:
                 path=path,
                 file=data,
                 file_options=file_opts,
-                upsert=True,        # ← aqui fora
+                upsert=True,  # Aqui fora!
             )
             public_url = supabase.storage.from_(bucket).get_public_url(path)
-            print(f"UPLOAD→ storage OK: {public_url}")
+            print(f"UPLOAD→ Sucesso! URL pública gerada: {public_url}")
             return public_url or ""
         else:
             print(
-                "UPLOAD→ storage indisponível "
-                f"(supabase={supabase is not None}, bucket={bucket}, url={'ok' if url else 'missing'}, role={'ok' if role else 'missing'})"
+                "UPLOAD→ Erro: Supabase ou configuração do bucket está ausente."
+                f" (supabase={supabase is not None}, bucket={bucket}, url={'ok' if url else 'missing'}, role={'ok' if role else 'missing'})"
             )
     except Exception as e:
-        print(f"UPLOAD→ storage FALHOU: {e!r}")
+        print(f"UPLOAD→ Falha ao tentar fazer upload para o Supabase: {e!r}")
 
     # 2) Fallback local (/tmp)
     try:
         upload_dir = current_app.config.get("UPLOAD_DIR")
         os.makedirs(upload_dir, exist_ok=True)
-        try:
-            file_storage.stream.seek(0)
-        except Exception:
-            pass
         dest = os.path.join(upload_dir, secure_filename(unique))
         file_storage.save(dest)
-        print(f"UPLOAD→ fallback /tmp: {dest}")
+        print(f"UPLOAD→ Fallback: Arquivo salvo em /tmp: {dest}")
         return unique
     except Exception as e:
-        print(f"UPLOAD→ fallback FALHOU: {e!r}")
+        print(f"UPLOAD→ Fallback falhou: {e!r}")
         return ""
+
 
 # === fim upload ===
 
