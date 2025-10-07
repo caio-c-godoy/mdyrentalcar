@@ -125,20 +125,6 @@ admin = Blueprint(
     template_folder="templates",  # Usa a pasta global app/templates
 )
 
-@admin.route('/test-upload', methods=["POST"])
-def test_upload():
-    """
-    Endpoint de teste para fazer o upload de uma imagem diretamente no Vercel.
-    """
-    file_storage = request.files.get("file")
-    if not file_storage:
-        return jsonify({"error": "Nenhum arquivo enviado"}), 400
-    
-    result = _save_uploaded_image(file_storage)
-    if result:
-        return jsonify({"success": True, "url": result}), 200
-    return jsonify({"error": "Falha ao enviar o arquivo"}), 500
-
 
 
 # ---------- Auth ----------
@@ -470,3 +456,18 @@ def admin_faq_init():
         flash(f"Erro ao criar tabelas: {e}", "danger")
     return redirect(url_for("admin.admin_faq_list"))
 
+
+
+@admin.route('/test-upload', methods=["POST"])
+def test_upload():
+    """
+    Endpoint de teste para fazer o upload de uma imagem diretamente no Vercel.
+    """
+    file_storage = request.files.get("file")
+    if not file_storage:
+        return jsonify({"error": "Nenhum arquivo enviado"}), 400
+    
+    result = _save_uploaded_image(file_storage)
+    if result:
+        return jsonify({"success": True, "url": result}), 200
+    return jsonify({"error": "Falha ao enviar o arquivo"}), 500
