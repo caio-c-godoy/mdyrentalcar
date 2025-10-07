@@ -49,8 +49,12 @@ def _save_uploaded_image(file_storage) -> str:
     """
     Tenta enviar ao Supabase Storage e retorna a URL pública.
     Se não rolar, cai no fallback local (/tmp) e retorna apenas o filename.
-    Loga o caminho escolhido para depuração.
     """
+    import uuid, pathlib, os
+    from werkzeug.utils import secure_filename
+    from flask import current_app
+    from app.extensions import supabase
+
     if not file_storage or not getattr(file_storage, "filename", ""):
         print("UPLOAD→ nenhum arquivo recebido")
         return ""
@@ -65,12 +69,11 @@ def _save_uploaded_image(file_storage) -> str:
     url = os.getenv("SUPABASE_URL")
     role = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-    # 1) Supabase Storage (persistente)
+    # 1) Tenta Supabase (persistente)
     try:
         if supabase is not None and bucket and url and role:
             path = f"categories/{secure_filename(unique)}"
-            data = file_storage.read()  # bytes
-            # sobe com upsert e content-type
+            data = file_storage.read()
             supabase.storage.from_(bucket).upload(
                 path=path,
                 file=data,
@@ -84,12 +87,14 @@ def _save_uploaded_image(file_storage) -> str:
             print(f"UPLOAD→ storage OK: {public_url}")
             return public_url or ""
         else:
-            print(f"UPLOAD→ storage indisponível "
-                  f"(supabase={supabase is not None}, bucket={bucket}, url={'ok' if url else 'missing'}, role={'ok' if role else 'missing'})")
+            print(
+                "UPLOAD→ storage indisponível "
+                f"(supabase={supabase is not None}, bucket={bucket}, url={'ok' if url else 'missing'}, role={'ok' if role else 'missing'})"
+            )
     except Exception as e:
         print(f"UPLOAD→ storage FALHOU: {e!r}")
 
-    # 2) Fallback local (/tmp) — não persiste em serverless
+    # 2) Fallback local (/tmp) — não persiste, mas evita erro
     try:
         upload_dir = current_app.config.get("UPLOAD_DIR")
         os.makedirs(upload_dir, exist_ok=True)
