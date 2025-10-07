@@ -94,9 +94,13 @@ def uploads(filename):
         if not supabase:
             return jsonify({"error": "Falha ao inicializar cliente do Supabase"}), 500
 
+        print(f"Cliente do Supabase inicializado com sucesso!")
+
         # Obtenha a URL pública do arquivo no Supabase
         file_url = supabase.storage.from_("mdy-uploads").get_public_url(filename)
         
+        print(f"URL gerada para o arquivo: {file_url}")
+
         # Verifique se o arquivo existe
         if not file_url:
             return jsonify({"error": "Arquivo não encontrado"}), 404
@@ -108,6 +112,9 @@ def uploads(filename):
         return jsonify({"error": f"Erro ao buscar o arquivo: {str(e)}"}), 500
 
 
+
+bucket = os.getenv("SUPABASE_BUCKET")
+print(f"Bucket configurado: {bucket}")
 
 # ---------- páginas ----------
 @site_bp.get("/")

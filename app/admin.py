@@ -65,7 +65,7 @@ def _save_uploaded_image(file_storage) -> str:
     url = os.getenv("SUPABASE_URL")
     role = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-    # Verificar e registrar as variáveis de ambiente
+    # Adicionando prints para verificar as variáveis
     print(f"SUPABASE_URL: {url}")
     print(f"SUPABASE_SERVICE_ROLE_KEY: {role}")
     print(f"SUPABASE_BUCKET: {bucket}")
@@ -75,6 +75,10 @@ def _save_uploaded_image(file_storage) -> str:
         if supabase is not None and bucket and url and role:
             path = f"categories/{secure_filename(unique)}"
             data = file_storage.read()
+        if not bucket:
+            bucket = "mdy-uploads"  # Substitua temporariamente o nome do bucket
+
+            print(f"Bucket final utilizado: {bucket}")    
 
             print(f"UPLOAD→ Tentando fazer upload para o Supabase com o caminho: {path}")
 
