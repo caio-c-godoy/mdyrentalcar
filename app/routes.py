@@ -82,15 +82,31 @@ def health():
 @site_bp.get("/uploads/<path:filename>")
 def uploads(filename):
     """
-    Serve os arquivos da rota serverless `/uploads/<filename>`, agora usando o Supabase.
+    Serve os arquivos diretamente do Supabase, se disponível.
     """
     try:
-        # Tente obter a URL pública do arquivo no bucket do Supabase
+        # Crie o cliente do Supabase
+        url = os.getenv("SUPABASE_URL")
+        key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        supabase = create_client(url, key)
+        
+        # Verifique se o cliente foi criado corretamente
+        if not supabase:
+            return jsonify({"error": "Falha ao inicializar cliente do Supabase"}), 500
+
+        # Obtenha a URL pública do arquivo no Supabase
         file_url = supabase.storage.from_("mdy-uploads").get_public_url(filename)
+
+        # Verifique se o arquivo existe
+        if not file_url:
+            return jsonify({"error": "Arquivo não encontrado"}), 404
+
         return jsonify({"file_url": file_url["publicURL"]})
     except Exception as e:
-        # Caso ocorra algum erro, retornar uma mensagem
+        # Caso ocorra um erro, retorne uma mensagem
+        print(f"Erro ao acessar o arquivo: {e}")
         return jsonify({"error": f"Erro ao buscar o arquivo: {str(e)}"}), 500
+
 
 
 
