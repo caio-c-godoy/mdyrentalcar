@@ -71,26 +71,24 @@
             <td><input name="slug" class="form-control" value="{{ c.slug }}" form="f{{ c.id }}"></td>
             <td><input name="position" type="number" class="form-control" value="{{ c.position or 0 }}" form="f{{ c.id }}"></td>
             <td>
-              {% if c.image_url %}
-                {% set img = c.image_url %}
-                {% if img.startswith('http') %}
-                  <div class="small mb-1">
-                    Atual: <a class="text-break" target="_blank" href="{{ img }}">{{ img }}</a>
-                  </div>
-                  <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
-                    <img class="rounded" src="{{ img }}" alt="{{ c.name }}" style="object-fit:cover">
-                  </div>
-                {% else %}
-                  <div class="small mb-1">
-                    Atual: <span class="text-break">{{ img }}</span>
-                  </div>
-                  <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
-                    <img class="rounded"
-                         src="{{ url_for('site.uploads', filename=img) }}"
-                         alt="{{ c.name }}" style="object-fit:cover">
-                  </div>
-                {% endif %}
+              <td>
+              {% if c.image %}
+                <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
+                  <img class="rounded"
+                      src="{{ url_for('site.category_image', cid=c.id) }}"
+                      alt="{{ c.name }}" style="object-fit:cover">
+                </div>
+              {% elif c.image_url %}
+                {# mantém fallback se tiver URL externa antiga #}
+                <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
+                  <img class="rounded"
+                      src="{{ c.image_url }}"
+                      alt="{{ c.name }}" style="object-fit:cover">
+                </div>
               {% endif %}
+              <input type="file" name="image_file" accept="image/*" class="form-control" form="f{{ c.id }}">
+            </td>
+
               <input type="file" name="image_file" accept="image/*" class="form-control" form="f{{ c.id }}">
             </td>
             <td class="text-center">
@@ -147,18 +145,24 @@
             <label class="form-label small">Posição</label>
             <input name="position" type="number" class="form-control" value="{{ c.position or 0 }}">
           </div>
-
           <td>
-          {% if c.image %}
-            <div class="small mb-1">
-              Atual: <span class="text-break">Imagem armazenada no banco</span>
-            </div>
-            <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
-              <img class="rounded" src="{{ url_for('site.uploads', filename=c.id) }}" alt="{{ c.name }}" style="object-fit:cover">
-            </div>
-          {% endif %}
-          <input type="file" name="image_file" accept="image/*" class="form-control" form="f{{ c.id }}">
-        </td>
+            {% if c.image %}
+              <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
+                <img class="rounded"
+                    src="{{ url_for('site.category_image', cid=c.id) }}"
+                    alt="{{ c.name }}" style="object-fit:cover">
+              </div>
+            {% elif c.image_url %}
+              {# mantém fallback se tiver URL externa antiga #}
+              <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
+                <img class="rounded"
+                    src="{{ c.image_url }}"
+                    alt="{{ c.name }}" style="object-fit:cover">
+              </div>
+            {% endif %}
+            <input type="file" name="image_file" accept="image/*" class="form-control" form="f{{ c.id }}">
+          </td>
+
 
           <div class="mb-3">
             <label class="form-label small">Imagem (upload)</label>

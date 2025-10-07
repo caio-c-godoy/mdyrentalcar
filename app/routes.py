@@ -79,75 +79,18 @@ supabase: Client = create_client(url, key)
 def health():
     return "ok", 200
 
-@site_bp.get("/uploads/<filename>")
-def uploads(filename):
-    """
-    Serve os arquivos diretamente do banco de dados (PostgreSQL).
-    """
-    try:
-        # Conectar ao banco de dados PostgreSQL
-        connection = psycopg2.connect(
-            dbname="your_db_name",  # Substitua com o nome do seu banco de dados
-            user="your_db_user",  # Substitua com o usuário do banco de dados
-            password="your_db_password",  # Substitua com a senha do banco de dados
-            host="your_db_host",  # Substitua com o host do banco de dados
-            port="your_db_port"  # Substitua com a porta do banco de dados
-        )
-        cursor = connection.cursor()
 
-        # Recuperando a imagem (BLOB) do banco de dados
-        query = "SELECT image FROM featured_categories WHERE name = %s"
-        cursor.execute(query, (filename,))
-        result = cursor.fetchone()
 
-        if result:
-            image_data = result[0]  # A imagem será um objeto binário
-            # Retornar a imagem como resposta
-            return Response(image_data, mimetype="image/jpeg")  # Ajuste o tipo de MIME conforme necessário
-        else:
-            return jsonify({"error": "Arquivo não encontrado"}), 404
+from flask import Response
 
-        cursor.close()
-        connection.close()
-
-    except Exception as e:
-        print(f"Erro ao recuperar a imagem do banco de dados: {e!r}")
-        return jsonify({"error": f"Erro ao buscar o arquivo: {str(e)}"}), 500
-
-@site_bp.get("/uploads/<int:category_id>")
-def uploads(category_id):
-    """
-    Serve os arquivos diretamente do banco de dados (PostgreSQL).
-    """
-    try:
-        # Conectar ao banco de dados PostgreSQL
-        connection = psycopg2.connect(
-            dbname="your_db_name",  # Substitua com o nome do seu banco de dados
-            user="your_db_user",  # Substitua com o usuário do banco de dados
-            password="your_db_password",  # Substitua com a senha do banco de dados
-            host="your_db_host",  # Substitua com o host do banco de dados
-            port="your_db_port"  # Substitua com a porta do banco de dados
-        )
-        cursor = connection.cursor()
-
-        # Recuperando a imagem (BLOB) do banco de dados
-        query = "SELECT image FROM featured_categories WHERE id = %s"
-        cursor.execute(query, (category_id,))
-        result = cursor.fetchone()
-
-        if result:
-            image_data = result[0]  # A imagem será um objeto binário
-            # Retornar a imagem como resposta
-            return Response(image_data, mimetype="image/jpeg")  # Ajuste o tipo de MIME conforme necessário
-        else:
-            return jsonify({"error": "Arquivo não encontrado"}), 404
-
-        cursor.close()
-        connection.close()
-
-    except Exception as e:
-        print(f"Erro ao recuperar a imagem do banco de dados: {e!r}")
-        return jsonify({"error": f"Erro ao buscar o arquivo: {str(e)}"}), 500
+@site_bp.get("/uploads/category/<int:cid>")
+def category_image(cid: int):
+    # usa o ORM (mais simples que psycopg2)
+    obj = FeaturedCategory.query.get(cid)
+    if not obj or not obj.image:
+        return ("", 404)
+    # se quiser detectar mimetype, fixe 'image/jpeg' ou 'image/png'
+    return Response(obj.image, mimetype="image/jpeg")
 
 
 # ---------- páginas ----------
@@ -196,7 +139,8 @@ def home():
                     "slug": _slug_key(c.slug),
                     "active": bool(c.active),
                     # >>> AQUI: sempre converte para URL servível
-                    "image": _resolve_image_url(c.image_url),
+                    "image": (url_for("site.category_image", cid=c.id)
+          if getattr(c, "image", None) else _resolve_image_url(c.image_url)),
                 }
             )
         else:

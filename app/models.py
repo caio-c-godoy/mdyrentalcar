@@ -52,6 +52,7 @@ class FeaturedCategory(db.Model):
     active = db.Column(db.Boolean, nullable=False, default=True)
     position = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    image = db.Column(db.LargeBinary)
 
     items = db.relationship(
         "FeaturedItem",
@@ -152,3 +153,5 @@ class FaqItem(db.Model):
 
     def __repr__(self) -> str:
         return f"<FaqItem {self.id} {self.question!r}>"
+    
+    
