@@ -70,31 +70,29 @@
             <td><input name="name" class="form-control" value="{{ c.name }}" form="f{{ c.id }}"></td>
             <td><input name="slug" class="form-control" value="{{ c.slug }}" form="f{{ c.id }}"></td>
             <td><input name="position" type="number" class="form-control" value="{{ c.position or 0 }}" form="f{{ c.id }}"></td>
+
             <td>
-              <td>
               {% if c.image %}
                 <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
                   <img class="rounded"
-                      src="{{ url_for('site.category_image', cid=c.id) }}"
-                      alt="{{ c.name }}" style="object-fit:cover">
+                       src="{{ url_for('site.category_image', cid=c.id) }}"
+                       alt="{{ c.name }}" style="object-fit:cover">
                 </div>
               {% elif c.image_url %}
-                {# mantém fallback se tiver URL externa antiga #}
                 <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
                   <img class="rounded"
-                      src="{{ c.image_url }}"
-                      alt="{{ c.name }}" style="object-fit:cover">
+                       src="{{ c.image_url }}"
+                       alt="{{ c.name }}" style="object-fit:cover">
                 </div>
               {% endif %}
-              <input type="file" name="image_file" accept="image/*" class="form-control" form="f{{ c.id }}">
+              <input type="file" name="image_file" accept="image/*" class="form-control mt-2" form="f{{ c.id }}">
             </td>
 
-              <input type="file" name="image_file" accept="image/*" class="form-control" form="f{{ c.id }}">
-            </td>
             <td class="text-center">
               {% if c.active %}<span class="badge bg-success">Ativa</span>
               {% else %}<span class="badge bg-secondary">Inativa</span>{% endif %}
             </td>
+
             <td class="d-flex flex-wrap gap-2">
               <button class="btn btn-sm btn-primary" form="f{{ c.id }}">Salvar</button>
 
@@ -133,36 +131,35 @@
         <form class="mt-3" id="fm{{ c.id }}" method="post"
               action="{{ url_for('admin.categories_update', cid=c.id) }}"
               enctype="multipart/form-data">
+
           <div class="mb-2">
             <label class="form-label small">Nome</label>
             <input name="name" class="form-control" value="{{ c.name }}">
           </div>
+
           <div class="mb-2">
             <label class="form-label small">Slug</label>
             <input name="slug" class="form-control" value="{{ c.slug }}">
           </div>
+
           <div class="mb-2">
             <label class="form-label small">Posição</label>
             <input name="position" type="number" class="form-control" value="{{ c.position or 0 }}">
           </div>
-          <td>
-            {% if c.image %}
-              <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
-                <img class="rounded"
-                    src="{{ url_for('site.category_image', cid=c.id) }}"
-                    alt="{{ c.name }}" style="object-fit:cover">
-              </div>
-            {% elif c.image_url %}
-              {# mantém fallback se tiver URL externa antiga #}
-              <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
-                <img class="rounded"
-                    src="{{ c.image_url }}"
-                    alt="{{ c.name }}" style="object-fit:cover">
-              </div>
-            {% endif %}
-            <input type="file" name="image_file" accept="image/*" class="form-control" form="f{{ c.id }}">
-          </td>
 
+          {% if c.image %}
+            <div class="ratio ratio-16x9 mb-2">
+              <img class="rounded"
+                   src="{{ url_for('site.category_image', cid=c.id) }}"
+                   alt="{{ c.name }}" style="object-fit:cover">
+            </div>
+          {% elif c.image_url %}
+            <div class="ratio ratio-16x9 mb-2">
+              <img class="rounded"
+                   src="{{ c.image_url }}"
+                   alt="{{ c.name }}" style="object-fit:cover">
+            </div>
+          {% endif %}
 
           <div class="mb-3">
             <label class="form-label small">Imagem (upload)</label>
