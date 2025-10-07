@@ -242,12 +242,13 @@
           <div class="col-12 col-sm-6 col-lg-4">
             <div class="card-boutique p-0 {% if not slot.active %}card-inactive{% endif %}">
               <div class="ratio ratio-16x9">
-                {% if slot.image %}
-                  <img src="{{ url_for('static', filename=slot.image) }}" alt="{{ slot.name }}">
-                {% else %}
-                  <img src="{{ url_for('static', filename='assets/placeholder-car.jpg') }}" alt="{{ slot.name }}">
-                {% endif %}
-              </div>
+              {% if slot.image %}
+                {# slot.image já é uma URL completa (http...) OU /uploads/<file> #}
+                <img src="{{ slot.image }}" alt="{{ slot.name }}">
+              {% else %}
+                <img src="{{ url_for('static', filename='assets/placeholder-car.jpg') }}" alt="{{ slot.name }}">
+              {% endif %}
+            </div>
               <div class="p-4 d-flex justify-content-between align-items-center">
                 <div>
                   <div class="fw-semibold" style="font-family:'Playfair Display',serif; font-size:1.25rem">{{ slot.name }}</div>
