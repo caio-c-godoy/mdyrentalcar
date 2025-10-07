@@ -127,6 +127,7 @@ admin = Blueprint(
 
 
 
+
 # ---------- Auth ----------
 def check_auth(username: str | None, password: str | None) -> bool:
     return (
@@ -471,3 +472,11 @@ def test_upload():
     if result:
         return jsonify({"success": True, "url": result}), 200
     return jsonify({"error": "Falha ao enviar o arquivo"}), 500
+
+@admin.get('/test-env')
+def test_env_vars():
+    return jsonify({
+        "SUPABASE_URL": os.getenv("SUPABASE_URL"),
+        "SUPABASE_SERVICE_ROLE_KEY": os.getenv("SUPABASE_SERVICE_ROLE_KEY"),
+        "SUPABASE_BUCKET": os.getenv("SUPABASE_BUCKET")
+    })
