@@ -103,17 +103,6 @@ def _save_uploaded_image(file_storage) -> str:
     except Exception as e:
         print(f"UPLOAD→ Falha ao tentar fazer upload para o Supabase: {e!r}")
 
-    # 2) Fallback local (/tmp)
-    try:
-        upload_dir = current_app.config.get("UPLOAD_DIR")
-        os.makedirs(upload_dir, exist_ok=True)
-        dest = os.path.join(upload_dir, secure_filename(unique))
-        file_storage.save(dest)
-        print(f"UPLOAD→ Fallback: Arquivo salvo em /tmp: {dest}")
-        return unique
-    except Exception as e:
-        print(f"UPLOAD→ Fallback falhou: {e!r}")
-        return ""
 
 # === fim upload ===
 
