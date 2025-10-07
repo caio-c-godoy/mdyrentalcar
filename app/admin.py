@@ -45,6 +45,12 @@ except OSError:
 
 ALLOWED_IMG_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
+# app/admin.py
+print(f"SUPABASE_URL: {os.getenv('SUPABASE_URL')}")
+print(f"SUPABASE_SERVICE_ROLE_KEY: {os.getenv('SUPABASE_SERVICE_ROLE_KEY')}")
+print(f"SUPABASE_BUCKET: {os.getenv('SUPABASE_BUCKET')}")
+
+
 def _save_uploaded_image(file_storage) -> str:
     import uuid, pathlib, os
     from werkzeug.utils import secure_filename
