@@ -1,6 +1,5 @@
 ﻿from __future__ import annotations
 
-import os
 import re
 import time
 from functools import wraps
@@ -48,49 +47,63 @@ ALLOWED_IMG_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
 def _save_uploaded_image(file_storage) -> str:
     """
-    Salva a imagem. Se SUPABASE_* estiver configurado, envia para Supabase Storage
-    e retorna a URL pública. Caso contrário, salva localmente em /tmp e retorna
-    apenas o nome do arquivo (fallback dev).
+    Tenta enviar ao Supabase Storage e retorna a URL pública.
+    Se não rolar, cai no fallback local (/tmp) e retorna apenas o filename.
+    Loga o caminho escolhido para depuração.
     """
-    if not file_storage:
+    if not file_storage or not getattr(file_storage, "filename", ""):
+        print("UPLOAD→ nenhum arquivo recebido")
         return ""
 
-    ext = pathlib.Path(file_storage.filename or "").suffix.lower()
+    ext = pathlib.Path(file_storage.filename).suffix.lower()
     if ext not in ALLOWED_IMG_EXTS:
+        print(f"UPLOAD→ extensão não permitida: {ext}")
         return ""
 
     unique = f"{uuid.uuid4().hex}{ext}"
+    bucket = os.getenv("SUPABASE_BUCKET")
+    url = os.getenv("SUPABASE_URL")
+    role = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-    # 1) Se houver Supabase Storage configurado, use-o (persistente)
+    # 1) Supabase Storage (persistente)
     try:
-        if supabase is not None and os.getenv("SUPABASE_BUCKET"):
-            bucket = os.getenv("SUPABASE_BUCKET")
-            # caminho “lógico” dentro do bucket (pode organizar por pasta)
+        if supabase is not None and bucket and url and role:
             path = f"categories/{secure_filename(unique)}"
-
-            # lê o conteúdo do file_storage (stream)
-            data = file_storage.read()
-            # faz o upload com upsert para poder substituir se repetir nome
+            data = file_storage.read()  # bytes
+            # sobe com upsert e content-type
             supabase.storage.from_(bucket).upload(
                 path=path,
                 file=data,
-                file_options={"content-type": file_storage.mimetype, "cache-control": "public, max-age=31536000", "upsert": True},
+                file_options={
+                    "content-type": file_storage.mimetype or "application/octet-stream",
+                    "cache-control": "public, max-age=31536000",
+                    "upsert": True,
+                },
             )
             public_url = supabase.storage.from_(bucket).get_public_url(path)
-            return public_url
-    except Exception:
-        # se o storage falhar por qualquer motivo, cai no fallback local
-        pass
+            print(f"UPLOAD→ storage OK: {public_url}")
+            return public_url or ""
+        else:
+            print(f"UPLOAD→ storage indisponível "
+                  f"(supabase={supabase is not None}, bucket={bucket}, url={'ok' if url else 'missing'}, role={'ok' if role else 'missing'})")
+    except Exception as e:
+        print(f"UPLOAD→ storage FALHOU: {e!r}")
 
-    # 2) Fallback: salva localmente em /tmp (NÃO persiste em serverless)
-    upload_dir = current_app.config["UPLOAD_DIR"]
-    os.makedirs(upload_dir, exist_ok=True)
-    dest_path = os.path.join(upload_dir, secure_filename(unique))
-    file_storage.stream.seek(0)  # volta o cursor para o início
-    file_storage.save(dest_path)
-
-    # no fallback local continuamos retornando só o filename
-    return unique
+    # 2) Fallback local (/tmp) — não persiste em serverless
+    try:
+        upload_dir = current_app.config.get("UPLOAD_DIR")
+        os.makedirs(upload_dir, exist_ok=True)
+        try:
+            file_storage.stream.seek(0)
+        except Exception:
+            pass
+        dest = os.path.join(upload_dir, secure_filename(unique))
+        file_storage.save(dest)
+        print(f"UPLOAD→ fallback /tmp: {dest}")
+        return unique
+    except Exception as e:
+        print(f"UPLOAD→ fallback FALHOU: {e!r}")
+        return ""
 
 # === fim upload ===
 
