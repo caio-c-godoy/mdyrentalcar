@@ -11,6 +11,8 @@ from app.models import (
 )
 from .models import FaqItem
 
+from supabase import create_client, Client
+import os
 
 site_bp = Blueprint("site", __name__)
 
@@ -66,6 +68,11 @@ def health_supabase():
     }), 200
 
 
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+supabase: Client = create_client(url, key)
+
+
 # ---------- health & uploads ----------
 @site_bp.get("/health")
 def health():
@@ -75,9 +82,16 @@ def health():
 @site_bp.get("/uploads/<path:filename>")
 def uploads(filename):
     """
-    Serve os arquivos da rota serverless `/uploads/<filename>`, para os antigos.
+    Serve os arquivos da rota serverless `/uploads/<filename>`, agora usando o Supabase.
     """
-    return send_from_directory(current_app.config["UPLOAD_DIR"], filename)
+    try:
+        # Tente obter a URL pública do arquivo no bucket do Supabase
+        file_url = supabase.storage.from_("mdy-uploads").get_public_url(filename)
+        return jsonify({"file_url": file_url["publicURL"]})
+    except Exception as e:
+        # Caso ocorra algum erro, retornar uma mensagem
+        return jsonify({"error": f"Erro ao buscar o arquivo: {str(e)}"}), 500
+
 
 
 # ---------- páginas ----------
