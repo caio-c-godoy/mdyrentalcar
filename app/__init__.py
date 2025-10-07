@@ -32,6 +32,15 @@ def create_app() -> Flask:
     # Extensões
     db.init_app(app)
 
+# --- Uploads: em serverless só /tmp é gravável ---
+    tmp_root = os.environ.get("TMPDIR") or "/tmp"
+    app.config["UPLOAD_DIR"] = os.environ.get("UPLOAD_DIR", os.path.join(tmp_root, "uploads"))
+    try:
+        os.makedirs(app.config["UPLOAD_DIR"], exist_ok=True)
+    except OSError:
+        pass
+
+
     # Cria as tabelas na subida do app (inclui FaqItem etc.)
     with app.app_context():
         try:

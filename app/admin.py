@@ -49,7 +49,7 @@ ALLOWED_IMG_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 def _save_uploaded_image(file_storage) -> str:
     """
     Recebe um FileStorage (campo 'image_file'), valida e salva.
-    Retorna caminho relativo a 'static/' (ex.: 'uploads/123_nome.jpg') ou "".
+    Retorna apenas o nome do arquivo salvo (ex.: '123_nome.jpg') ou "".
     """
     if not file_storage or not getattr(file_storage, "filename", ""):
         return ""
@@ -61,7 +61,8 @@ def _save_uploaded_image(file_storage) -> str:
     unique = f"{int(time.time())}_{name}"
     dest = os.path.join(UPLOAD_DIR, unique)
     file_storage.save(dest)
-    return f"uploads/{unique}"
+    return unique
+
 # === fim upload ===
 
 

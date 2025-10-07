@@ -1,6 +1,6 @@
 ﻿# app/routes.py
 import re
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, current_app, send_from_directory, url_for
 
 def _ensure_tables():
     try:
@@ -20,6 +20,11 @@ def digits_only(s: str) -> str:
 @site_bp.get("/health")
 def health():
     return "ok", 200
+
+@site_bp.get("/uploads/<path:filename>")
+def uploads(filename):
+    return send_from_directory(current_app.config["UPLOAD_DIR"], filename)
+
 
 def _slug_key(s: str) -> str:
     """
@@ -89,7 +94,7 @@ def home():
                 "name":  c.name or name,
                 "slug":  _slug_key(c.slug),
                 "active": bool(c.active),
-                "image": (c.image_url or ""),  # relativo a /static
+                "image": (url_for("site.uploads", filename=c.image_url) if c.image_url else ""),
             })
         else:
             grid_slots.append({
