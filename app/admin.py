@@ -140,6 +140,7 @@ def test_upload():
     return jsonify({"error": "Falha ao enviar o arquivo"}), 500
 
 
+
 # ---------- Auth ----------
 def check_auth(username: str | None, password: str | None) -> bool:
     return (
