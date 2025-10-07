@@ -1,31 +1,40 @@
 # scripts/init_db.py
-"""
-Cria as tabelas no banco apontado por DATABASE_URL (Supabase).
-Uso (PowerShell no Windows):
-  $env:DATABASE_URL = "postgresql+psycopg2://USER:PASS@HOST:6543/postgres?sslmode=require"
-  python scripts/init_db.py
-"""
-
 import os, sys
 
-# garante que o pacote do app seja encontrado
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-# carrega o app (usa sua factory em wsgi.py)
-from wsgi import app
+try:
+    from wsgi import app
+except Exception as e:
+    print(f"[init_db] Falhou ao importar wsgi.app: {e}")
+    sys.exit(1)
 
-# pega o db conforme tua estrutura (extensions.py)
-from app.extensions import db  # type: ignore
+try:
+    from app.extensions import db
+except Exception as e:
+    print(f"[init_db] Falhou ao importar app.extensions.db: {e}")
+    sys.exit(1)
 
 def main():
+    print("[init_db] DATABASE_URL =", os.environ.get("DATABASE_URL"))
     with app.app_context():
-        # IMPORTANTE: importe os models antes do create_all
-        import app.models  # noqa: F401
+        # garanta que os models sejam importados
+        try:
+            import app.models  # noqa: F401
+        except Exception as e:
+            print(f"[init_db] Aviso: não consegui importar app.models: {e}")
+        # valida conexão antes
+        try:
+            db.session.execute(db.text("select 1"))
+            print("[init_db] Conexão OK")
+        except Exception as e:
+            print(f"[init_db] Conexão falhou: {e}")
+            sys.exit(1)
 
         db.create_all()
-        print("✅ Tabelas criadas/atualizadas com sucesso no banco definido por DATABASE_URL.")
+        print("✅ Tabelas criadas/atualizadas com sucesso.")
 
 if __name__ == "__main__":
     main()

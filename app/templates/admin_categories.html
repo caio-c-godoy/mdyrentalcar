@@ -72,9 +72,15 @@
             <td><input name="position" type="number" class="form-control" value="{{ c.position or 0 }}" form="f{{ c.id }}"></td>
             <td>
               {% if c.image_url %}
-                <div class="small mb-1">Atual: <code class="text-break">{{ c.image_url }}</code></div>
+                <div class="small mb-1">
+                  Atual:
+                  <a class="text-break" target="_blank"
+                     href="{{ url_for('site.uploads', filename=c.image_url) }}">{{ c.image_url }}</a>
+                </div>
                 <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
-                  <img class="rounded" src="{{ url_for('static', filename=c.image_url) }}" alt="{{ c.name }}" style="object-fit:cover">
+                  <img class="rounded"
+                       src="{{ url_for('site.uploads', filename=c.image_url) }}"
+                       alt="{{ c.name }}" style="object-fit:cover">
                 </div>
               {% endif %}
               <input type="file" name="image_file" accept="image/*" class="form-control" form="f{{ c.id }}">
@@ -136,7 +142,9 @@
 
           {% if c.image_url %}
             <div class="ratio ratio-16x9 mb-2">
-              <img class="rounded" src="{{ url_for('static', filename=c.image_url) }}" alt="{{ c.name }}" style="object-fit:cover">
+              <img class="rounded"
+                   src="{{ url_for('site.uploads', filename=c.image_url) }}"
+                   alt="{{ c.name }}" style="object-fit:cover">
             </div>
             <div class="small text-muted text-break mb-2">{{ c.image_url }}</div>
           {% endif %}
