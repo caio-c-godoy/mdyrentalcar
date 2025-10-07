@@ -68,9 +68,10 @@ def health_supabase():
     }), 200
 
 
-url = os.getenv("SUPABASE_URL")
-key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-supabase: Client = create_client(url, key)
+url = 'https://btvfcbtaqddutipmhpkf.supabase.co'  # Substitua pela sua URL real do Supabase
+key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0dmZjYnRhcWRkdXRpcG1ocGtmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTg0Mjg4NSwiZXhwIjoyMDc1NDE4ODg1fQ.oX42yzGzMYOmi0BN1JpREvX3BTPc0z5YHIwQLpBfh1s'  # Substitua pela chave do Supabase
+supabase = create_client(url, key)
+
 
 
 # ---------- health & uploads ----------
