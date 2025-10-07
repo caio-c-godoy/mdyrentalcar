@@ -1,0 +1,105 @@
+/* ===== Aparência do select igual aos outros campos ===== */
+.quote-card .form-select{
+  background: rgba(255,255,255,.06) !important;   /* vidro */
+  border: 1px solid rgba(255,255,255,.18);
+  color: #f5f7fd !important;                      /* texto claro no campo fechado */
+}
+.quote-card .form-select:focus{
+  background: rgba(255,255,255,.10) !important;
+  color: #f5f7fd !important;
+  box-shadow: 0 0 0 .25rem rgba(241,208,83,.15);
+}
+
+/* ===== Itens do dropdown (nativos do browser) ===== */
+.quote-card .form-select option,
+.quote-card .form-select optgroup{
+  background:#fff !important;     /* menu branco */
+  color:#0b1220 !important;       /* texto escuro no menu */
+}
+
+/* Safari/iOS: garante que o texto apareça escuro só no menu */
+@supports (-webkit-appearance:none){
+  .quote-card .form-select option { -webkit-text-fill-color:#0b1220; }
+}
+ /* === Tamanho do logo da home (override n�o-destrutivo) === */
+ .hero .brand-lockup img{
+   /* m�nimo 160px, cresce com a tela (20vw), m�ximo 300px */
+   height: clamp(160px, 20vw, 200px) !important;
+   max-width: 95vw;
+   object-fit: contain;
+   filter: drop-shadow(0 8px 28px rgba(241,208,83,.28));
+ }
+ /* Espa�amento sob o logo (opcional, ajuda quando cresce) */
+ .hero .brand-lockup{ margin-bottom: 22px; }
+ /* ===== FAQ page overrides ===== */
+#faqPage .accordion-item{
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  overflow: hidden;
+}
+#faqPage .accordion-button{
+  background: #ffffff !important;
+  color: #0b1220 !important;        /* texto escuro */
+  font-weight: 600;
+}
+#faqPage .accordion-button:not(.collapsed){
+  background: #f7f9ff !important;
+  color: #0b1220 !important;
+  box-shadow: none;
+}
+#faqPage .accordion-button:focus{
+  box-shadow: 0 0 0 .25rem rgba(241,208,83,.25);
+}
+#faqPage .accordion-body{
+  background: #ffffff;
+  color: #0b1220;
+}
+#faqPage .accordion-button::after{
+  filter: invert(0);                 /* chevron escuro */
+}
+ /* ===== FAQ page (alto contraste) ===== */
+.faq-page .accordion-item{
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;
+  overflow:hidden;
+}
+.faq-page .accordion-button{
+  background:#ffffff !important;
+  color:#0b1220 !important;
+  font-weight:600;
+}
+.faq-page .accordion-button:not(.collapsed){
+  background:#f7f9ff !important;
+  color:#0b1220 !important;
+  box-shadow:none;
+}
+.faq-page .accordion-button:focus{
+  box-shadow:0 0 0 .25rem rgba(241,208,83,.25);
+}
+.faq-page .accordion-body{
+  background:#ffffff;
+  color:#0b1220;
+}
+.faq-page .accordion-button::after{
+  filter:invert(0); /* chevron escuro */
+}
+
+/* evita barra de rolagem horizontal da página */
+html, body { overflow-x: hidden; }
+
+/* garante que tabelas rolem dentro do bloco, não na página */
+.admin-wrap .table-responsive { overflow-x: auto; }
+
+/* largura máxima mais “enxuta” no desktop grande */
+@media (min-width: 1400px) {
+  .container-lg { max-width: 1200px; }
+}
+
+/* em telas bem estreitas, ações de tabela empilham */
+@media (max-width: 576px) {
+  .admin-actions { display: grid; gap: .5rem; }
+  .admin-actions form, .admin-actions a, .admin-actions button { width: 100%; }
+}
+
+/* evita que prévias de imagem “estourem” a célula */
+.admin-img-preview { max-width: 220px; }

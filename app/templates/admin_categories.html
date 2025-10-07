@@ -1,0 +1,169 @@
+﻿{% extends "admin_base.html" %}
+{% block content %}
+<div class="container my-4">
+  <h3>Frota Destaque — Categorias</h3>
+
+  <!-- Nova categoria -->
+  <form class="card p-3 mb-4" method="post"
+        action="{{ url_for('admin.categories_new') }}"
+        enctype="multipart/form-data">
+    <h6 class="mb-3">Nova categoria</h6>
+    <div class="row g-2 g-lg-3 align-items-end">
+      <div class="col-12 col-lg-4">
+        <label class="form-label">Nome</label>
+        <input name="name" class="form-control" placeholder="Nome (ex.: Sedans)" required>
+      </div>
+      <div class="col-12 col-lg-3">
+        <label class="form-label">Slug</label>
+        <input name="slug" class="form-control" placeholder="slug (ex.: sedans)" required>
+      </div>
+      <div class="col-6 col-lg-1">
+        <label class="form-label">Posição</label>
+        <input name="position" type="number" class="form-control" value="0">
+      </div>
+      <div class="col-12 col-lg-3">
+        <label class="form-label">Imagem (upload)</label>
+        <input type="file" name="image_file" accept="image/*" class="form-control">
+      </div>
+      <div class="col-6 col-lg-1">
+        <label class="form-label">Ativa</label>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="active" value="1" id="newActive" checked>
+          <label class="form-check-label" for="newActive">Sim</label>
+        </div>
+      </div>
+      <div class="col-12 mt-2">
+        <button class="btn btn-primary">Adicionar</button>
+      </div>
+    </div>
+  </form>
+
+  {% if not categories %}
+    <div class="text-center text-muted py-4">Nenhuma categoria cadastrada.</div>
+  {% else %}
+
+  {# ====== DESKTOP (≥ md): tabela limpa, sem overflow ====== #}
+  <div class="d-none d-md-block">
+    <div class="table-responsive">
+      <table class="table align-middle table-dark table-striped table-bordered mb-0">
+        <thead>
+          <tr>
+            <th style="width:60px">#</th>
+            <th>Nome</th>
+            <th>Slug</th>
+            <th style="width:110px">Posição</th>
+            <th>Imagem</th>
+            <th style="width:110px">Ativa</th>
+            <th style="width:240px">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in categories %}
+          <tr>
+            <td>{{ loop.index }}</td>
+
+            {# form “vazio” da linha #}
+            <form id="f{{ c.id }}" method="post"
+                  action="{{ url_for('admin.categories_update', cid=c.id) }}"
+                  enctype="multipart/form-data"></form>
+
+            <td><input name="name" class="form-control" value="{{ c.name }}" form="f{{ c.id }}"></td>
+            <td><input name="slug" class="form-control" value="{{ c.slug }}" form="f{{ c.id }}"></td>
+            <td><input name="position" type="number" class="form-control" value="{{ c.position or 0 }}" form="f{{ c.id }}"></td>
+            <td>
+              {% if c.image_url %}
+                <div class="small mb-1">Atual: <code class="text-break">{{ c.image_url }}</code></div>
+                <div class="ratio ratio-16x9 mb-2" style="max-width:220px">
+                  <img class="rounded" src="{{ url_for('static', filename=c.image_url) }}" alt="{{ c.name }}" style="object-fit:cover">
+                </div>
+              {% endif %}
+              <input type="file" name="image_file" accept="image/*" class="form-control" form="f{{ c.id }}">
+            </td>
+            <td class="text-center">
+              {% if c.active %}<span class="badge bg-success">Ativa</span>
+              {% else %}<span class="badge bg-secondary">Inativa</span>{% endif %}
+            </td>
+            <td class="d-flex flex-wrap gap-2">
+              <button class="btn btn-sm btn-primary" form="f{{ c.id }}">Salvar</button>
+
+              <form method="post" action="{{ url_for('admin.categories_toggle', cid=c.id) }}">
+                <button class="btn btn-sm {% if c.active %}btn-warning{% else %}btn-success{% endif %}">
+                  {% if c.active %}Desativar{% else %}Ativar{% endif %}
+                </button>
+              </form>
+
+              <form method="post" action="{{ url_for('admin.categories_delete', cid=c.id) }}"
+                    onsubmit="return confirm('Excluir categoria?');">
+                <button class="btn btn-sm btn-danger">Excluir</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# ====== MOBILE (< md): cards empilhados ====== #}
+  <div class="d-md-none vstack gap-3">
+    {% for c in categories %}
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="fw-semibold">{{ c.name }}</div>
+          {% if c.active %}
+            <span class="badge text-bg-success">Ativa</span>
+          {% else %}
+            <span class="badge text-bg-secondary">Inativa</span>
+          {% endif %}
+        </div>
+
+        <form class="mt-3" id="fm{{ c.id }}" method="post"
+              action="{{ url_for('admin.categories_update', cid=c.id) }}"
+              enctype="multipart/form-data">
+          <div class="mb-2">
+            <label class="form-label small">Nome</label>
+            <input name="name" class="form-control" value="{{ c.name }}">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Slug</label>
+            <input name="slug" class="form-control" value="{{ c.slug }}">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Posição</label>
+            <input name="position" type="number" class="form-control" value="{{ c.position or 0 }}">
+          </div>
+
+          {% if c.image_url %}
+            <div class="ratio ratio-16x9 mb-2">
+              <img class="rounded" src="{{ url_for('static', filename=c.image_url) }}" alt="{{ c.name }}" style="object-fit:cover">
+            </div>
+            <div class="small text-muted text-break mb-2">{{ c.image_url }}</div>
+          {% endif %}
+          <div class="mb-3">
+            <label class="form-label small">Imagem (upload)</label>
+            <input type="file" name="image_file" accept="image/*" class="form-control">
+          </div>
+
+          <button class="btn btn-primary w-100">Salvar</button>
+        </form>
+
+        <div class="d-flex gap-2 mt-2">
+          <form class="flex-fill" method="post" action="{{ url_for('admin.categories_toggle', cid=c.id) }}">
+            <button class="btn {% if c.active %}btn-warning{% else %}btn-success{% endif %} w-100">
+              {% if c.active %}Desativar{% else %}Ativar{% endif %}
+            </button>
+          </form>
+          <form class="flex-fill" method="post" action="{{ url_for('admin.categories_delete', cid=c.id) }}"
+                onsubmit="return confirm('Excluir categoria?');">
+            <button class="btn btn-danger w-100">Excluir</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% endif %}
+</div>
+{% endblock %}

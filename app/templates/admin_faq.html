@@ -1,0 +1,91 @@
+﻿{% extends "admin_base.html" %}
+{% block content %}
+<div class="container my-4">
+  <h3>Perguntas Frequentes (FAQ)</h3>
+
+  <!-- Nova pergunta -->
+  <form class="card p-3 mb-4" method="post" action="{{ url_for('admin.admin_faq_new') }}">
+    <h6 class="mb-3">Nova pergunta</h6>
+    <div class="row g-2 align-items-start">
+      <div class="col-12">
+        <label class="form-label">Pergunta</label>
+        <input name="question" class="form-control" placeholder="Ex.: Qual a idade mínima?" required>
+      </div>
+      <div class="col-12">
+        <label class="form-label">Resposta (aceita HTML)</label>
+        <textarea name="answer" class="form-control" rows="4" placeholder="Texto da resposta..."></textarea>
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label">Posição</label>
+        <input type="number" name="position" class="form-control" value="0">
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label">Ativa</label>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="active" value="1" id="faqActiveNew" checked>
+          <label class="form-check-label" for="faqActiveNew">Sim</label>
+        </div>
+      </div>
+      <div class="col-12 col-lg-12 mt-2">
+        <button class="btn btn-primary">Adicionar</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Lista -->
+  <div class="table-responsive">
+    <table class="table align-middle table-dark table-striped table-bordered">
+      <thead>
+        <tr>
+          <th style="width:60px">#</th>
+          <th>Pergunta</th>
+          <th style="width:260px">Posição</th>
+          <th style="width:110px">Ativa</th>
+          <th style="width:260px">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in items %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>
+            <form class="d-grid gap-2" method="post" action="{{ url_for('admin.admin_faq_update', fid=it.id) }}">
+              <input name="question" class="form-control" value="{{ it.question }}">
+              <textarea name="answer" class="form-control mt-2" rows="4">{{ it.answer }}</textarea>
+          </td>
+          <td>
+              <input name="position" type="number" class="form-control" value="{{ it.position or 0 }}">
+          </td>
+          <td class="text-center">
+            {% if it.active %}
+              <span class="badge bg-success">Ativa</span>
+            {% else %}
+              <span class="badge bg-secondary">Inativa</span>
+            {% endif %}
+          </td>
+          <td class="d-flex gap-2">
+              <div class="form-check mt-1">
+                <input class="form-check-input" type="checkbox" name="active" value="1" id="a{{ it.id }}" {% if it.active %}checked{% endif %}>
+                <label class="form-check-label" for="a{{ it.id }}">Ativa</label>
+              </div>
+              <button class="btn btn-sm btn-primary">Salvar</button>
+            </form>
+
+            <form method="post" action="{{ url_for('admin.admin_faq_toggle', fid=it.id) }}">
+              <button class="btn btn-sm {% if it.active %}btn-warning{% else %}btn-success{% endif %}">
+                {% if it.active %}Desativar{% else %}Ativar{% endif %}
+              </button>
+            </form>
+
+            <form method="post" action="{{ url_for('admin.admin_faq_delete', fid=it.id) }}" onsubmit="return confirm('Excluir pergunta?');">
+              <button class="btn btn-sm btn-danger">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,19 @@
+﻿{% extends "admin_base.html" %}
+{% block title %}Configurações{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Configurações</h1>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form method="post" class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">WhatsApp (somente números, com DDI/DDD)</label>
+        <input class="form-control" name="whatsapp" value="{{ whatsapp or '' }}" placeholder="55DDDNNNNNNNN">
+      </div>
+      <div class="col-12">
+        <button class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

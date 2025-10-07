@@ -1,0 +1,127 @@
+﻿{% extends "admin_base.html" %}
+{% block title %}Localidades{% endblock %}
+{% block content %}
+  <h1 class="mb-3">Localidades</h1>
+
+  {# Formulário NOVA localidade — empilha no mobile #}
+  <form class="row g-2 g-md-3 mb-4" method="post" action="{{ url_for('admin.locations_new') }}">
+    <div class="col-12 col-md-6">
+      <input name="name" class="form-control" placeholder="Ex.: Aeroporto MCO" required>
+    </div>
+    <div class="col-6 col-md-2">
+      <input name="position" class="form-control" type="number" value="0" placeholder="Posição">
+    </div>
+    <div class="col-6 col-md-2">
+      <button class="btn btn-success w-100">Adicionar</button>
+    </div>
+  </form>
+
+  {% if not locations %}
+    <div class="text-center text-muted py-4">Nenhuma localidade cadastrada.</div>
+  {% else %}
+
+    {# ====== DESKTOP (≥ md): tabela sem barra horizontal ====== #}
+    <div class="d-none d-md-block">
+      <table class="table table-sm align-middle mb-0">
+        <thead>
+          <tr>
+            <th style="width:70px">#</th>
+            <th>Nome</th>
+            <th style="width:130px">Posição</th>
+            <th style="width:120px">Status</th>
+            <th style="width:230px">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for l in locations %}
+          <tr>
+            <td>{{ l.id }}</td>
+
+            <td>
+              <form class="d-flex flex-nowrap align-items-center gap-2"
+                    method="post"
+                    action="{{ url_for('admin.locations_update', lid=l.id) }}">
+                <input class="form-control form-control-sm"
+                       name="name"
+                       value="{{ l.name }}"
+                       style="width:360px;max-width:100%">
+                <input class="form-control form-control-sm"
+                       name="position"
+                       type="number"
+                       value="{{ l.position }}"
+                       style="width:90px">
+                <button class="btn btn-primary btn-sm">Salvar</button>
+              </form>
+            </td>
+
+            <td>{{ l.position }}</td>
+
+            <td>
+              {% if l.active %}
+                <span class="badge text-bg-success">Ativo</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Inativo</span>
+              {% endif %}
+            </td>
+
+            <td class="d-flex gap-2">
+              <form method="post" action="{{ url_for('admin.locations_toggle', lid=l.id) }}">
+                <button class="btn btn-warning btn-sm">Ativar/Desativar</button>
+              </form>
+              <form method="post" action="{{ url_for('admin.locations_delete', lid=l.id) }}"
+                    onsubmit="return confirm('Excluir esta localidade?')">
+                <button class="btn btn-danger btn-sm">Excluir</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {# ====== MOBILE (< md): Cards empilhados ====== #}
+    <div class="d-md-none">
+      <div class="vstack gap-3">
+        {% for l in locations %}
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="small text-muted">ID #{{ l.id }}</div>
+              {% if l.active %}
+                <span class="badge text-bg-success">Ativo</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Inativo</span>
+              {% endif %}
+            </div>
+
+            <form class="mt-2" method="post" action="{{ url_for('admin.locations_update', lid=l.id) }}">
+              <div class="mb-2">
+                <label class="form-label small mb-1">Nome</label>
+                <input class="form-control" name="name" value="{{ l.name }}">
+              </div>
+              <div class="mb-3">
+                <label class="form-label small mb-1">Posição</label>
+                <input class="form-control" name="position" type="number" value="{{ l.position }}">
+              </div>
+              <button class="btn btn-primary w-100">Salvar</button>
+            </form>
+
+            <div class="d-flex gap-2 mt-3">
+              <form class="flex-fill" method="post" action="{{ url_for('admin.locations_toggle', lid=l.id) }}">
+                <button class="btn btn-warning w-100">
+                  {% if l.active %}Desativar{% else %}Ativar{% endif %}
+                </button>
+              </form>
+              <form class="flex-fill" method="post" action="{{ url_for('admin.locations_delete', lid=l.id) }}"
+                    onsubmit="return confirm('Excluir esta localidade?')">
+                <button class="btn btn-danger w-100">Excluir</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  {% endif %}
+{% endblock %}

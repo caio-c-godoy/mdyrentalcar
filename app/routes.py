@@ -1,0 +1,172 @@
+﻿# app/routes.py
+import re
+from flask import Blueprint, render_template, request, jsonify
+
+def _ensure_tables():
+    try:
+        db.create_all()
+    except Exception:
+        pass
+from app.extensions import db
+from app.models import Location, QuoteRequest, ContactMessage, SiteSetting, LegalPage, FeaturedCategory
+import unicodedata
+from .models import FaqItem
+
+site_bp = Blueprint("site", __name__)
+
+def digits_only(s: str) -> str:
+    return re.sub(r"\D+", "", s or "")
+
+
+
+def _slug_key(s: str) -> str:
+    """
+    Normaliza slugs para chave de comparaÃ§Ã£o:
+    - minÃºsculas
+    - remove acentos
+    - troca qq separador por '-'
+    - remove '-' das pontas
+    - dobra alguns plurais comuns (sedans->sedan, suvs->suvs/suv)
+    """
+    s = (s or "").strip().lower()
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")
+
+    # dobras Ãºteis
+    if s == "sedans":
+        s = "sedan"
+    if s == "suv":
+        s = "suvs"  # usamos 'suvs' como chave canÃ´nica
+    if s in ("especial", "especial", "special"):
+        s = "especial"
+    return s
+
+
+@site_bp.get("/")
+def home():
+    # WhatsApp do admin
+    whatsapp_raw = SiteSetting.get_value("whatsapp_number", "") or ""
+    whatsapp = digits_only(whatsapp_raw)
+
+    # categorias do banco indexadas por slug normalizado
+    all_cats = {}
+    for c in FeaturedCategory.query.all():
+        k = _slug_key(c.slug or "")
+        if k:  # guarda o primeiro por posiÃ§Ã£o/ID se quiser priorizar depois
+            all_cats[k] = c
+
+    # slots fixos (nomes exibidos / slugs "canÃ´nicos")
+    desired = [
+        ("Compacto",     "compacto"),
+        ("Sedan",        "sedan"),
+        ("SUVs",         "suvs"),
+        ("Minivans",     "minivans"),        
+        ("Luxo",         "luxo"),
+        ("Especial",  "especial"),
+        
+    ]
+
+    grid_slots = []
+    for name, want_slug in desired:
+        c = all_cats.get(_slug_key(want_slug))
+        if not c:
+            # tente casar variantes comuns digitadas no admin:
+            variantes = {
+                "sedan": ["sedans", "sedÃ£"],
+                "suvs":  ["suv"],
+                "especial": ["special"],
+            }.get(want_slug, [])
+            for v in variantes:
+                c = all_cats.get(_slug_key(v))
+                if c:
+                    break
+
+        if c:
+            grid_slots.append({
+                "name":  c.name or name,
+                "slug":  _slug_key(c.slug),
+                "active": bool(c.active),
+                "image": (c.image_url or ""),  # relativo a /static
+            })
+        else:
+            grid_slots.append({
+                "name":  f"{name} (configurar no admin)",
+                "slug":  want_slug,
+                "active": False,
+                "image": "",
+            })
+
+    return render_template("index.html", whatsapp=whatsapp, grid_slots=grid_slots)
+
+
+# ---------- API ----------
+@site_bp.get("/api/locations")
+def api_locations():
+    rows = Location.query.filter_by(active=True).order_by(Location.position.asc()).all()
+    return jsonify([{"id": r.id, "name": r.name} for r in rows])
+
+@site_bp.post("/api/quote")
+def api_quote():
+    data = request.get_json(silent=True) or {}
+    required = ["pickup_place", "pickup_date", "drop_place", "drop_date", "name", "phone", "category"]
+    missing = [k for k in required if not str(data.get(k, "")).strip()]
+    if missing:
+        return jsonify(ok=False, error=f"Campos obrigatÃ³rios ausentes: {', '.join(missing)}"), 400
+
+    q = QuoteRequest(
+        pickup_place=data["pickup_place"].strip(),
+        pickup_date=data["pickup_date"].strip(),
+        drop_place=data["drop_place"].strip(),
+        drop_date=data["drop_date"].strip(),
+        name=data["name"].strip(),
+        phone=data["phone"].strip(),
+        category=data["category"].strip(),
+        source=(data.get("source") or "home").strip(),
+        user_agent=request.headers.get("User-Agent", "")[:255],
+        ip_addr=request.headers.get("X-Forwarded-For", request.remote_addr or "")[:45],
+        status="novo",
+    )
+    db.session.add(q)
+    db.session.commit()
+    return jsonify(ok=True, id=q.id)
+
+@site_bp.post("/api/contact")
+def api_contact():
+    data = request.get_json(silent=True) or {}
+    required = ["name", "email", "message"]
+    missing = [k for k in required if not str(data.get(k, "")).strip()]
+    if missing:
+        return jsonify(ok=False, error=f"Campos obrigatÃ³rios ausentes: {', '.join(missing)}"), 400
+    m = ContactMessage(
+        name=data["name"].strip(),
+        email=data["email"].strip(),
+        message=data["message"].strip(),
+        ip_addr=request.headers.get("X-Forwarded-For", request.remote_addr or "")[:45],
+        user_agent=request.headers.get("User-Agent", "")[:255],
+    )
+    db.session.add(m)
+    db.session.commit()
+    return jsonify(ok=True, id=m.id)
+
+# ======== PÃ¡ginas legais pÃºblicas ========
+@site_bp.get("/privacy")
+def privacy_page():
+    page = LegalPage.get_or_create("privacy", "PolÃ­tica de Privacidade")
+    return render_template("legal_public.html", page=page)
+
+@site_bp.get("/terms")
+def terms_page():
+    page = LegalPage.get_or_create("terms", "Termos de Uso")
+    return render_template("legal_public.html", page=page)
+# ======== fim pÃ¡ginas legais pÃºblicas ========
+
+@site_bp.get('/faq')
+def faq_page():
+    # WhatsApp (para manter o FAB e consistÃªncia visual, se vocÃª usa isso no FAQ tambÃ©m)
+    whatsapp_raw = SiteSetting.get_value('whatsapp_number', '') or ''
+    whatsapp = digits_only(whatsapp_raw)
+
+    items = FaqItem.query.filter_by(active=True).order_by(FaqItem.position.asc(), FaqItem.id.asc()).all()
+    return render_template('faq.html', items=items, whatsapp=whatsapp)
+

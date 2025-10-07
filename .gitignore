@@ -1,0 +1,52 @@
+﻿# Python/Flask
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.env
+.env.*
+.venv/
+venv/
+env/
+instance/
+*.sqlite
+*.db
+*.sqlite3
+
+# Logs e cache
+*.log
+.flaskenv
+.mypy_cache/
+.pytype/
+.pytest_cache/
+.coverage*
+htmlcov/
+
+# Frontend
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
+
+# Docker
+*.pid
+
+# Projeto
+app/static/uploads/
+.vercel
+
+*.sql
+
+
+*.sql
+

@@ -1,0 +1,76 @@
+﻿{% extends "admin_base.html" %}
+{% block title %}Itens (modelos){% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Frota Destaque — Itens (modelos)</h1>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <h5 class="card-title">Novo item</h5>
+    <form method="post" action="/admin/items/new" class="row g-2">
+      <div class="col-md-3"><input class="form-control" name="title" placeholder="Título (ex.: BMW 320i)"></div>
+      <div class="col-md-3"><input class="form-control" name="subtitle" placeholder="Subtítulo (ex.: 2023 • Auto)"></div>
+      <div class="col-md-3"><input class="form-control" name="image_path" placeholder="assets/sedan.jpg"></div>
+      <div class="col-md-2">
+        <select class="form-select" name="category_id">
+          <option value="">Categoria...</option>
+          {% for c in categories %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-1"><input type="number" class="form-control" name="position" value="0"></div>
+      <div class="col-12 col-md-2"><button class="btn btn-primary w-100">Adicionar</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-striped align-middle mb-0">
+      <thead class="table-light">
+        <tr><th>#</th><th>Título</th><th>Categoria</th><th>Imagem</th><th>Pos</th><th>Ativo</th><th style="width:220px">Ações</th></tr>
+      </thead>
+      <tbody>
+      {% for it in items %}
+        <tr>
+          <td>{{ it.id }}</td>
+          <td>
+            <form method="post" action="/admin/items/{{ it.id }}/update" class="row g-2 align-items-center">
+              <div class="col-md-4"><input class="form-control form-control-sm" name="title" value="{{ it.title }}"></div>
+              <div class="col-md-4"><input class="form-control form-control-sm" name="subtitle" value="{{ it.subtitle }}"></div>
+              <div class="col-md-3"><input class="form-control form-control-sm" name="image_path" value="{{ it.image_path }}"></div>
+              <div class="col-md-1"><input type="number" class="form-control form-control-sm" name="position" value="{{ it.position }}"></div>
+              <div class="col-12 mt-2">
+                <select class="form-select form-select-sm" name="category_id">
+                  {% for c in categories %}
+                    <option value="{{ c.id }}" {{ 'selected' if c.id == it.category_id else '' }}>{{ c.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-12 mt-2">
+                <button class="btn btn-sm btn-outline-primary">Salvar</button>
+              </div>
+            </form>
+          </td>
+          <td>{{ it.category.name if it.category else '-' }}</td>
+          <td><code>{{ it.image_path }}</code></td>
+          <td>{{ it.position }}</td>
+          <td>
+            <form method="post" action="/admin/items/{{ it.id }}/toggle">
+              <button class="btn btn-sm {{ 'btn-success' if it.active else 'btn-outline-secondary' }}">{{ 'Ativo' if it.active else 'Inativo' }}</button>
+            </form>
+          </td>
+          <td>
+            <form method="post" action="/admin/items/{{ it.id }}/delete" onsubmit="return confirm('Excluir item?')">
+              <button class="btn btn-sm btn-outline-danger">Excluir</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="text-center text-muted">Nenhum item.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

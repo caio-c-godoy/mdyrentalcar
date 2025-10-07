@@ -1,0 +1,59 @@
+﻿:root { --admin-gap: 12px; }
+
+@media (max-width: 991.98px){
+  /* aplica a todo html de admin (body ganhará a classe 'admin-page' já já) */
+  body.admin-page { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0)); }
+
+  /* Tabelas roláveis sem alterar templates: */
+  .admin-wrap table.table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .admin-wrap table.table > thead, 
+  .admin-wrap table.table > tbody, 
+  .admin-wrap table.table > tfoot, 
+  .admin-wrap table.table > thead > tr, 
+  .admin-wrap table.table > tbody > tr, 
+  .admin-wrap table.table > tfoot > tr, 
+  .admin-wrap table.table > thead > tr > th, 
+  .admin-wrap table.table > tbody > tr > td, 
+  .admin-wrap table.table > tfoot > tr > td {
+    white-space: nowrap;
+  }
+
+  /* Quando você quiser que um campo quebre linha, adicione class="text-wrap" no TD/TH */
+  .admin-wrap .text-wrap { white-space: normal !important; }
+
+  /* Botões: área mínima de toque */
+  .admin-wrap .btn {
+    min-height: 40px;
+    padding: .55rem .8rem;
+  }
+
+  /* Cards e blocos do admin com respiro */
+  .admin-wrap .card, 
+  .admin-wrap .table-responsive, 
+  .admin-wrap .box {
+    margin-bottom: var(--admin-gap);
+  }
+
+  /* Inputs/Select maiores para tocar */
+  .admin-wrap .form-control, 
+  .admin-wrap .form-select {
+    min-height: 44px;
+    padding: .5rem .75rem;
+    font-size: 16px; /* evita zoom no iOS */
+  }
+
+  /* Ícones com hitarea aceitável */
+  .admin-wrap .btn i, .admin-wrap .bi {
+    pointer-events: none;
+  }
+}
+
+/* Correção comum: às vezes algum overlay impede click nos links da tabela */
+.admin-wrap a, .admin-wrap button { pointer-events: auto; }

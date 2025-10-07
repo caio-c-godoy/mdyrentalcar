@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MDY Rental Car • Boutique Car Rental</title>
+  <meta name="description" content="Locação boutique com experiência premium. Frota selecionada, atendimento humano e processos simples. MDY Rental Car." />
+  <meta name="theme-color" content="#0a1030" />
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/favicon.png') }}">
+
+  <!-- Tipografia -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600..800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+
+  <style>
+    :root{
+      --navy:#0a1030;
+      --ink:#0b1220;
+      --gold:#f1d053;
+      --glass: rgba(10,16,48,.42);
+      --text:#e9edf7;
+    }
+    html,body{ height:100%; }
+    body{ font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:#090d1a; color:#cfd7ea; }
+
+    /* NAV transparente (sem logo no canto) */
+    .navbar{
+      position: absolute; inset: 0 auto auto 0; width:100%; z-index: 10;
+      background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,0));
+      backdrop-filter: blur(4px);
+    }
+    .navbar-brand{ display:none !important; } /* esconder logo topo */
+
+    /* HERO luxo */
+    .hero{ position: relative; min-height:100svh; display:grid; place-items:center; overflow:hidden; background:#000; }
+    .hero video, .hero .bg-image{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(.62) saturate(1.05); }
+    .hero::after{
+      content:""; position:absolute; inset:0;
+      background:
+        radial-gradient(1200px 600px at 75% 85%, rgba(241,208,83,.25) 0%, rgba(241,208,83,0) 55%),
+        linear-gradient(180deg, rgba(10,16,48,.55) 0%, rgba(10,16,48,.35) 35%, rgba(10,16,48,.75) 100%);
+      pointer-events:none;
+    }
+    .hero .content{ position:relative; z-index:2; width:min(1100px, 92vw); text-align:center; color:var(--text); }
+    .brand-lockup{
+  display:flex; align-items:center; justify-content:center; gap:16px; 
+  margin-bottom:22px;
+}
+.brand-lockup img{
+  height: 200px;              /* antes ~120px: AGORA BEM MAIOR */
+  max-width: 90vw;            /* garante que não estoure em telas menores */
+  object-fit: contain;
+  filter: drop-shadow(0 8px 28px rgba(241,208,83,.28));
+}
+@media (max-width: 991.98px){
+  .brand-lockup img{ height: 160px; }
+}
+@media (max-width: 575.98px){
+  .brand-lockup img{ height: 120px; }
+}
+
+    .eyebrow{ display:inline-flex; align-items:center; gap:.5rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:#fff; background:rgba(241,208,83,.16); border:1px solid rgba(241,208,83,.35); border-radius:100px; padding:.4rem .85rem; }
+    .display-title{ font-family: "Playfair Display", serif; font-weight:700; line-height:1.1; letter-spacing:.3px; color:#fff; font-size: clamp(2rem, 3.4vw + .6rem, 3.6rem); margin: 14px 0 10px; }
+    .lead{ color:#dbe3f5; max-width: 880px; margin-inline:auto; font-size: clamp(1rem, .5vw + .9rem, 1.25rem); }
+    .cta-row{ margin-top: 26px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .btn-primary{ background: var(--navy); border-color: var(--gold); box-shadow: 0 10px 26px rgba(20,25,60,.45) }
+    .btn-primary:hover{ filter:brightness(1.07) }
+    .btn-gold{ background: var(--gold); color:#0a0f22; border: none; font-weight:700; box-shadow: 0 14px 28px rgba(241,208,83,.25); }
+    .btn-gold:hover{ filter: brightness(1.02); }
+
+    /* === Cotação (hero) === */
+.quote-card{
+  backdrop-filter: blur(8px);
+  background: rgba(10,16,48,.45);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 18px 40px rgba(0,0,0,.40);
+  max-width: 1100px;
+  margin: 22px auto 0;
+}
+.quote-card .form-control,
+.quote-card .form-select{
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.18);
+  color: #f5f7fd;
+}
+.quote-card .form-control::placeholder{ color:#cfd7ea; opacity:.75; }
+.quote-card label{ font-size:.85rem; color:#e6ebf7; }
+
+
+    /* Seções */
+    section{ padding: clamp(56px, 7vw, 104px) 0; }
+    .section-muted{ background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)); border-top:1px solid rgba(255,255,255,.08); border-bottom:1px solid rgba(255,255,255,.08); }
+
+    .card-boutique{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 22px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      height:100%;
+    }
+    .icon-circle{ width:56px; height:56px; border-radius:50%; display:grid; place-items:center; background: rgba(241,208,83,.14); color: var(--gold); border: 1px solid rgba(241,208,83,.35); }
+
+    footer{ background:#080c18; color:#aab3c5; }
+    footer a{ color:#cad7ff; }
+
+    /* Lang & WhatsApp */
+    .lang-switch{ position: fixed; right:.75rem; bottom:.75rem; z-index:1000; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
+    .wa-fab{ position:fixed; right:14px; bottom:14px; z-index:1100; text-decoration:none; }
+    .wa-fab .btn{ width:56px; height:56px; border-radius:50%; display:grid; place-items:center; background:#25D366; color:#fff; box-shadow:0 10px 26px rgba(0,0,0,.35); }
+
+    /* texto cinza bem clarinho para subtítulos/legendas */
+    .text-soft{
+    color: #E2E8F5 !important;   /* cinza quase branco, suave */
+    }
+
+
+    @media (prefers-reduced-motion: reduce){ .hero video{ display:none!important; } }
+  </style>
+
+  <!-- Rich Snippet básico -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"CarRental",
+    "name":"MDY Rental Car",
+    "areaServed":"Orlando",
+    "brand":"MDY",
+    "url":"https://example.com",
+    "logo":"{{ url_for('static', filename='assets/logo-gold.png') }}",
+    "contactPoint":{"@type":"ContactPoint","contactType":"customer service","email":"contato@mdyrentalcar.com"},
+    "currenciesAccepted":"USD, BRL",
+    "priceRange":"$$"
+  }
+  </script>
+</head>
+<body>
+  <!-- NAV -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#"></a> <!-- oculto -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbars">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div id="navbars" class="collapse navbar-collapse">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="#diferenciais" data-i18n="nav.benefits">Diferenciais</a></li>
+          <li class="nav-item"><a class="nav-link" href="#frota" data-i18n="nav.fleet">Frota</a></li>
+          <li class="nav-item"><a class="nav-link" href="#como" data-i18n="nav.how">Como funciona</a></li>
+          <li class="nav-item"><a class="nav-link" href="#planos" data-i18n="nav.plans">Planos</a></li>
+          <li class="nav-item"><a class="nav-link" href="#faq" data-i18n="nav.faq">FAQ</a></li>
+          <li class="nav-item"><a class="nav-link" href="#contato" data-i18n="nav.contact">Contato</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero">
+    <video class="d-none d-md-block" autoplay muted loop playsinline poster="{{ url_for('static', filename='assets/hero-poster.jpg') }}">
+      <source src="{{ url_for('static', filename='assets/hero.mp4') }}" type="video/mp4" />
+    </video>
+    <img class="bg-image d-block d-md-none" src="{{ url_for('static', filename='assets/hero-mobile.jpg') }}" alt="Frota boutique MDY" />
+
+    <div class="content">
+      <div class="brand-lockup">
+        <a href="#" aria-label="Topo">
+          <img src="{{ url_for('static', filename='assets/logo-gold.png') }}" alt="MDY Rental Car">
+        </a>
+      </div>
+      <span class="eyebrow" data-i18n="hero.badge"><i class="bi bi-stars"></i> Boutique experience</span>
+      <h1 class="display-title" data-i18n="hero.title">Aluguel de carros, <span style="color:var(--gold)">do seu jeito</span></h1>
+      <p class="lead" data-i18n="hero.subtitle">Seleção enxuta, atendimento humano e processos sem atrito. A experiência certa, no momento certo.</p>
+      <form id="quoteForm" class="quote-card">
+  <div class="row g-2 g-md-3 align-items-end">
+    <div class="col-12 col-md-3">
+      <label class="form-label">Local de retirada</label>
+      <input name="pickup_place" class="form-control" placeholder="Ex.: Aeroporto MCO" required>
+    </div>
+    <div class="col-12 col-md-3">
+      <label class="form-label">Data de retirada</label>
+      <input name="pickup_date" type="date" class="form-control" required>
+    </div>
+    <div class="col-12 col-md-3">
+      <label class="form-label">Local de entrega</label>
+      <input name="drop_place" class="form-control" placeholder="Ex.: Hotel em Orlando" required>
+    </div>
+    <div class="col-12 col-md-3">
+      <label class="form-label">Data de entrega</label>
+      <input name="drop_date" type="date" class="form-control" required>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <label class="form-label">Nome</label>
+      <input name="name" class="form-control" placeholder="Seu nome" required>
+    </div>
+    <div class="col-12 col-md-4">
+      <label class="form-label">Telefone (WhatsApp)</label>
+      <input name="phone" class="form-control" placeholder="(DDD) 99999-9999" required>
+    </div>
+    <div class="col-12 col-md-4">
+      <label class="form-label">Tipo de carro (categoria)</label>
+      <select name="category" class="form-select" required>
+        {% if categories and categories|length %}
+          {% for c in categories %}
+            <option value="{{ c.name }}">{{ c.name }}</option>
+          {% endfor %}
+        {% else %}
+          <option>Econômico</option>
+          <option>Sedan</option>
+          <option>SUV</option>
+          <option>Minivan</option>
+          <option>Premium</option>
+        {% endif %}
+      </select>
+    </div>
+
+    <div class="col-12 text-center">
+      <button type="submit" class="btn btn-gold btn-lg px-4">Fazer cotação</button>
+      <div id="quoteFeedback" class="small mt-2 text-soft"></div>
+    </div>
+  </div>
+</form>
+
+    </div>
+  </header>
+
+  <!-- DIFERENCIAIS -->
+  <section id="diferenciais">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="display-6 fw-bold" style="font-family:'Playfair Display',serif" data-i18n="benefits.title">Por que a MDY Rental Car é boutique?</h2>
+        <p class="text-soft" data-i18n="benefits.subtitle">Curadoria, agilidade e transparência para quem valoriza tempo e experiência.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-12 col-md-6 col-lg-3">
+          <div class="card-boutique p-4 h-100">
+            <div class="icon-circle mb-3"><i class="bi bi-hand-thumbs-up"></i></div>
+            <h5 class="fw-semibold" data-i18n="benefits.b1.title">Atendimento humano</h5>
+            <p class="mb-0" data-i18n="benefits.b1.text">Sem chatbots no momento-chave. Você fala com alguém que resolve.</p>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+          <div class="card-boutique p-4 h-100">
+            <div class="icon-circle mb-3"><i class="bi bi-lightning-charge"></i></div>
+            <h5 class="fw-semibold" data-i18n="benefits.b2.title">Retirada expressa</h5>
+            <p class="mb-0" data-i18n="benefits.b2.text">Chegue e saia. Documentos validados antes, fila quase zero.</p>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+          <div class="card-boutique p-4 h-100">
+            <div class="icon-circle mb-3"><i class="bi bi-shield-check"></i></div>
+            <h5 class="fw-semibold" data-i18n="benefits.b3.title">Coberturas claras</h5>
+            <p class="mb-0" data-i18n="benefits.b3.text">Planos objetivos: sem asteriscos escondidos ou surpresas.</p>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+          <div class="card-boutique p-4 h-100">
+            <div class="icon-circle mb-3"><i class="bi bi-car-front"></i></div>
+            <h5 class="fw-semibold" data-i18n="benefits.b4.title">Frota curada</h5>
+            <p class="mb-0" data-i18n="benefits.b4.text">Modelos atuais e bem-cuidados, com revisão e limpeza padrão hotel.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FROTA DESTAQUE (categorias ativas) -->
+  <section id="frota" class="section-muted">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="display-6 fw-bold" style="font-family:'Playfair Display',serif" data-i18n="fleet.title">Frota Destaque</h2>
+        <p class="text-soft" data-i18n="fleet.subtitle">Explore nossas categorias boutique</p>
+      </div>
+      <div class="row g-4">
+        {% for c in categories %}
+        <div class="col-12 col-sm-6 col-lg-4">
+          <div class="card-boutique p-0 overflow-hidden">
+            <div class="ratio ratio-16x9">
+              {% if cat_hero.get(c.id) %}
+                <img src="{{ url_for('static', filename=cat_hero.get(c.id)) }}" alt="{{ c.name }}">
+              {% else %}
+                <img src="{{ url_for('static', filename='assets/suv.jpg') }}" alt="{{ c.name }}">
+              {% endif %}
+            </div>
+            <div class="p-4 d-flex justify-content-between align-items-center">
+              <div>
+                <div class="fw-semibold" style="font-family:'Playfair Display',serif; font-size:1.25rem">{{ c.name }}</div>
+                <div class="small text-muted">{{ c.slug }}</div>
+              </div>
+              <span class="badge" style="background:rgba(241,208,83,.18); border:1px solid rgba(241,208,83,.35); color:#f1d053">Categoria</span>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center text-soft" data-i18n="fleet.empty">Nenhuma categoria ativa ainda.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- COMO FUNCIONA (expandido) -->
+  <section id="como">
+    <div class="container">
+      <div class="row g-4 align-items-center">
+        <div class="col-12 col-lg-6">
+          <h2 class="fw-bold mb-3" style="font-family:'Playfair Display',serif" data-i18n="how.title">Como funciona</h2>
+          <ol class="list-group list-group-numbered">
+            <li class="list-group-item bg-transparent text-light border-secondary" data-i18n="how.step1">Escolha o veículo e o período.</li>
+            <li class="list-group-item bg-transparent text-light border-secondary" data-i18n="how.step2">Preencha seus dados e confirme a reserva.</li>
+            <li class="list-group-item bg-transparent text-light border-secondary" data-i18n="how.step3">Retire o carro e aproveite a viagem.</li>
+            <li class="list-group-item bg-transparent text-light border-secondary" data-i18n="how.step4">Devolução simples no ponto combinado.</li>
+          </ol>
+          <p class="mt-3 text-soft" data-i18n="how.note">Sem letrinhas miúdas: mostramos valores e coberturas antes da confirmação.</p>
+          <div class="d-flex gap-2 mt-3">
+            <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-check2-circle me-1"></i><span data-i18n="how.badge1">Validação antecipada</span></span>
+            <span class="badge bg-info-subtle text-info border border-info-subtle"><i class="bi bi-clock me-1"></i><span data-i18n="how.badge2">Retirada em minutos</span></span>
+          </div>
+        </div>
+        <div class="col-12 col-lg-6">
+          <div class="ratio ratio-16x9 rounded-4 overflow-hidden" style="box-shadow:0 18px 40px rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.12)">
+            <img src="{{ url_for('static', filename='assets/app-mockup.jpg') }}" alt="App MDY no celular">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLANOS & COBERTURAS -->
+  <section id="planos" class="section-muted">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="display-6 fw-bold" style="font-family:'Playfair Display',serif" data-i18n="plans.title">Planos & Coberturas</h2>
+        <p class="text-soft" data-i18n="plans.subtitle">Escolha o que faz sentido para a sua viagem. Sempre com suporte humano 24/7.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-12 col-lg-4">
+          <div class="card-boutique p-4 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <h5 class="fw-semibold mb-0" data-i18n="plans.p1.title">Essencial</h5>
+              <span class="badge text-bg-light"><span data-i18n="plans.p1.badge">Melhor custo</span></span>
+            </div>
+            <ul class="mb-3">
+              <li data-i18n="plans.p1.i1">Proteção básica contra danos</li>
+              <li data-i18n="plans.p1.i2">Quilometragem controlada</li>
+              <li data-i18n="plans.p1.i3">Assistência 24h</li>
+            </ul>
+            <button class="btn btn-outline-light w-100" onclick="location.href='#contato'" data-i18n="plans.cta">Solicitar cotação</button>
+          </div>
+        </div>
+        <div class="col-12 col-lg-4">
+          <div class="card-boutique p-4 h-100 border border-warning">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <h5 class="fw-semibold mb-0" data-i18n="plans.p2.title">Conforto</h5>
+              <span class="badge text-bg-warning"><i class="bi bi-star-fill me-1"></i><span data-i18n="plans.p2.badge">Mais escolhido</span></span>
+            </div>
+            <ul class="mb-3">
+              <li data-i18n="plans.p2.i1">Proteção ampliada</li>
+              <li data-i18n="plans.p2.i2">Condutor adicional gratuito</li>
+              <li data-i18n="plans.p2.i3">Retirada expressa</li>
+            </ul>
+            <button class="btn btn-gold w-100" onclick="location.href='#contato'" data-i18n="plans.cta">Solicitar cotação</button>
+          </div>
+        </div>
+        <div class="col-12 col-lg-4">
+          <div class="card-boutique p-4 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <h5 class="fw-semibold mb-0" data-i18n="plans.p3.title">Premium</h5>
+              <span class="badge text-bg-light"><span data-i18n="plans.p3.badge">Zero fricção</span></span>
+            </div>
+            <ul class="mb-3">
+              <li data-i18n="plans.p3.i1">Proteção máxima</li>
+              <li data-i18n="plans.p3.i2">Quilometragem livre</li>
+              <li data-i18n="plans.p3.i3">Entrega/retirada no endereço</li>
+            </ul>
+            <button class="btn btn-outline-light w-100" onclick="location.href='#contato'" data-i18n="plans.cta">Solicitar cotação</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEPOIMENTOS -->
+  <section id="reviews">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="display-6 fw-bold" style="font-family:'Playfair Display',serif" data-i18n="reviews.title">O que nossos clientes dizem</h2>
+        <p class="text-soft" data-i18n="reviews.subtitle">Experiências reais de quem já alugou com a MDY.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-12 col-lg-4">
+          <div class="card-boutique p-4 h-100">
+            <div class="d-flex align-items-center gap-2 mb-2"><i class="bi bi-chat-quote"></i><strong>Ana M.</strong></div>
+            <p class="mb-0" data-i18n="reviews.r1">“Cheguei e saí em 10 minutos. Carro impecável, atendimento muito atencioso.”</p>
+          </div>
+        </div>
+        <div class="col-12 col-lg-4">
+          <div class="card-boutique p-4 h-100">
+            <div class="d-flex align-items-center gap-2 mb-2"><i class="bi bi-chat-quote"></i><strong>Rafael T.</strong></div>
+            <p class="mb-0" data-i18n="reviews.r2">“Cobertura clara, sem susto no balcão. Valeu cada dólar.”</p>
+          </div>
+        </div>
+        <div class="col-12 col-lg-4">
+          <div class="card-boutique p-4 h-100">
+            <div class="d-flex align-items-center gap-2 mb-2"><i class="bi bi-chat-quote"></i><strong>Luciana P.</strong></div>
+            <p class="mb-0" data-i18n="reviews.r3">“Entrega no hotel foi diferencial. Experiência boutique de verdade.”</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOCALIZAÇÕES & ENTREGA -->
+  <section id="locais" class="section-muted">
+    <div class="container">
+      <div class="row g-4 align-items-center">
+        <div class="col-12 col-lg-6">
+          <h2 class="fw-bold mb-3" style="font-family:'Playfair Display',serif" data-i18n="locations.title">Onde atendemos</h2>
+          <ul class="list-unstyled">
+            <li class="mb-2"><i class="bi bi-geo-alt me-2"></i><span data-i18n="locations.l1">Orlando International Airport (MCO)</span></li>
+            <li class="mb-2"><i class="bi bi-geo-alt me-2"></i><span data-i18n="locations.l2">Kissimmee & Lake Buena Vista</span></li>
+            <li class="mb-2"><i class="bi bi-geo-alt me-2"></i><span data-i18n="locations.l3">Entrega/retirada em hotéis parceiros</span></li>
+          </ul>
+          <p class="text-soft mb-0" data-i18n="locations.note">Consulte disponibilidade para outras regiões da Flórida.</p>
+        </div>
+        <div class="col-12 col-lg-6">
+          <div class="ratio ratio-16x9 rounded-4 overflow-hidden" style="box-shadow:0 18px 40px rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.12)">
+            <img src="{{ url_for('static', filename='assets/map.jpg') }}" alt="Mapa de atendimento MDY">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="display-6 fw-bold" style="font-family:'Playfair Display',serif" data-i18n="faq.title">Perguntas frequentes</h2>
+        <p class="text-soft" data-i18n="faq.subtitle">Algumas respostas rápidas antes da sua reserva.</p>
+      </div>
+      <div class="accordion" id="faqAcc">
+        <div class="accordion-item bg-transparent text-light border-secondary">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#f1">
+              <span data-i18n="faq.q1">Quais documentos preciso?</span>
+            </button>
+          </h2>
+          <div id="f1" class="accordion-collapse collapse" data-bs-parent="#faqAcc">
+            <div class="accordion-body text-muted" data-i18n="faq.a1">Carteira de motorista válida, passaporte (para estrangeiros) e cartão de crédito para caução.</div>
+          </div>
+        </div>
+        <div class="accordion-item bg-transparent text-light border-secondary">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#f2">
+              <span data-i18n="faq.q2">Posso ter condutor adicional?</span>
+            </button>
+          </h2>
+          <div id="f2" class="accordion-collapse collapse" data-bs-parent="#faqAcc">
+            <div class="accordion-body text-muted" data-i18n="faq.a2">Sim. No plano Conforto, 1 condutor adicional está incluído. Em outros planos é opcional.</div>
+          </div>
+        </div>
+        <div class="accordion-item bg-transparent text-light border-secondary">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#f3">
+              <span data-i18n="faq.q3">Como funciona o depósito (caução)?</span>
+            </button>
+          </h2>
+          <div id="f3" class="accordion-collapse collapse" data-bs-parent="#faqAcc">
+            <div class="accordion-body text-muted" data-i18n="faq.a3">Bloqueio no cartão de crédito durante o período da locação, liberado após a conferência de devolução.</div>
+          </div>
+        </div>
+        <div class="accordion-item bg-transparent text-light border-secondary">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#f4">
+              <span data-i18n="faq.q4">Posso receber/entregar no hotel?</span>
+            </button>
+          </h2>
+          <div id="f4" class="accordion-collapse collapse" data-bs-parent="#faqAcc">
+            <div class="accordion-body text-muted" data-i18n="faq.a4">Sim, consulte disponibilidade e taxa de deslocamento no plano Premium.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOBRE -->
+  <section id="sobre" class="section-muted">
+    <div class="container">
+      <div class="row g-4 align-items-center">
+        <div class="col-12 col-lg-6">
+          <h2 class="fw-bold mb-3" style="font-family:'Playfair Display',serif" data-i18n="about.title">Sobre a MDY</h2>
+          <p class="mb-2" data-i18n="about.p1">Somos uma locadora boutique focada em experiência. Menos burocracia, mais cuidado em cada detalhe.</p>
+          <p class="mb-2" data-i18n="about.p2">Nossa frota é enxuta e curada, com manutenção e higienização padrão hotel, para você só se preocupar com o roteiro.</p>
+          <p class="mb-0" data-i18n="about.p3">Atendemos viajantes, famílias e executivos que valorizam tempo, previsibilidade e transparência.</p>
+        </div>
+        <div class="col-12 col-lg-6">
+          <div class="ratio ratio-16x9 rounded-4 overflow-hidden" style="box-shadow:0 18px 40px rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.12)">
+            <img src="{{ url_for('static', filename='assets/garage.jpg') }}" alt="Equipe MDY e garagem">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section id="cta-final">
+    <div class="container text-center">
+      <h2 class="display-6 fw-bold" style="font-family:'Playfair Display',serif" data-i18n="cta.title">Pronto para dirigir sua experiência?</h2>
+      <p class="text-soft mb-4" data-i18n="cta.subtitle">Fale com a nossa equipe e receba sua cotação personalizada em minutos.</p>
+      <div class="d-flex justify-content-center gap-2">
+        <a href="#contato" class="btn btn-gold btn-lg px-4" data-i18n="cta.cta1">Solicitar cotação</a>
+        <a href="#faq" class="btn btn-outline-light btn-lg px-4" data-i18n="cta.cta2">Tirar dúvidas</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTATO -->
+  <section id="contato" class="section-muted">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-12 col-lg-6">
+          <h2 class="fw-bold" style="font-family:'Playfair Display',serif" data-i18n="contact.title">Fale com a gente</h2>
+          <p class="text-soft" data-i18n="contact.subtitle">Reservas, planos e parcerias.</p>
+          <ul class="list-unstyled">
+            <li class="mb-2"><i class="bi bi-whatsapp me-2"></i><a href="#" data-i18n="contact.whatsapp">WhatsApp comercial</a></li>
+            <li class="mb-2"><i class="bi bi-envelope me-2"></i><a href="mailto:contato@mdyrentalcar.com" data-i18n="contact.email">contato@mdyrentalcar.com</a></li>
+            <li><i class="bi bi-geo me-2"></i><span data-i18n="contact.address">Orlando, FL</span></li>
+          </ul>
+        </div>
+        <div class="col-12 col-lg-6">
+          <div class="card-boutique p-4">
+            <form id="contactForm">
+              <div class="mb-3">
+                <label class="form-label" data-i18n="form.name">Nome</label>
+                <input class="form-control" name="name" placeholder="Seu nome" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label" data-i18n="form.email">E-mail</label>
+                <input type="email" class="form-control" name="email" placeholder="voce@email.com" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label" data-i18n="form.message">Mensagem</label>
+                <textarea class="form-control" name="message" rows="4" placeholder="Como podemos ajudar?" required></textarea>
+              </div>
+              <button type="submit" class="btn btn-gold" data-i18n="form.send">Enviar</button>
+              <div id="contactFeedback" class="small mt-2"></div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="py-4">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+      <div>
+        <strong>MDY Rental Car</strong> · <span data-i18n="footer.rights">Todos os direitos reservados.</span>
+      </div>
+      <div class="small">
+        <a class="me-3" href="#" data-i18n="footer.privacy">Política de Privacidade</a>
+        <a href="#" data-i18n="footer.terms">Termos de Uso</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Troca de idioma -->
+  <div class="btn-group lang-switch">
+    <button class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-translate me-1"></i><span id="langLabel">Português</span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+      <li><a class="dropdown-item" href="#" data-lang="pt">Português (PT-BR)</a></li>
+      <li><a class="dropdown-item" href="#" data-lang="en">English</a></li>
+      <li><a class="dropdown-item" href="#" data-lang="es">Español</a></li>
+    </ul>
+  </div>
+
+  <!-- === Locais sugeridos (datalist) + preenchimento automático === -->
+<datalist id="locations-list"></datalist>
+<script>
+(async () => {
+  try {
+    const res = await fetch('/api/locations', { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) throw new Error('Falha ao carregar localidades');
+    const data = await res.json(); // [{id, name}, ...]
+
+    // cria as <option> no datalist
+    const dl = document.getElementById('locations-list');
+    dl.innerHTML = data.map(l => `<option value="${l.name}"></option>`).join('');
+
+    // tenta achar os campos de retirada/entrega por id OU name
+    const pickup = document.getElementById('pickup_place') 
+                || document.querySelector('[name="pickup_place"]');
+    const drop   = document.getElementById('drop_place')   
+                || document.querySelector('[name="drop_place"]');
+
+    // aponta os campos para o datalist
+    if (pickup) pickup.setAttribute('list', 'locations-list');
+    if (drop)   drop.setAttribute('list', 'locations-list');
+  } catch (err) {
+    console.error(err);
+  }
+})();
+</script>
+
+
+  <!-- WhatsApp flutuante -->
+  {% if whatsapp %}
+  <a class="wa-fab" href="https://wa.me/{{ whatsapp | replace(' ', '') }}" target="_blank" aria-label="WhatsApp">
+    <div class="btn"><i class="bi bi-whatsapp" style="font-size:28px"></i></div>
+  </a>
+  {% endif %}
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Dicionários (PT/EN/ES) — expandido
+    const I18N = {
+      pt:{
+        nav:{benefits:"Diferenciais",fleet:"Frota",how:"Como funciona",plans:"Planos",faq:"FAQ",contact:"Contato"},
+        hero:{badge:"Experiência boutique",title:"Aluguel de carros, do seu jeito",subtitle:"Seleção enxuta, atendimento humano e processos sem atrito. A experiência certa, no momento certo.",cta1:"Ver veículos",cta2:"Como funciona"},
+        benefits:{title:"Por que a MDY é boutique?",subtitle:"Curadoria, agilidade e transparência para quem valoriza tempo e experiência.",
+          b1:{title:"Atendimento humano",text:"Sem chatbots no momento-chave. Você fala com alguém que resolve."},
+          b2:{title:"Retirada expressa",text:"Chegue e saia. Documentos validados antes, fila quase zero."},
+          b3:{title:"Coberturas claras",text:"Planos objetivos: sem asteriscos escondidos ou surpresas."},
+          b4:{title:"Frota curada",text:"Modelos atuais e bem-cuidados, com revisão e limpeza padrão hotel."}
+        },
+        fleet:{title:"Frota Destaque", subtitle:"Explore nossas categorias boutique", empty:"Nenhuma categoria ativa ainda."},
+        services:{title:"Assinatura boutique de mobilidade",subtitle:"Coberturas claras, assistência 24/7 e retirada sem filas.",
+          s1:{title:"Reserva mobile",text:"Finalize sua reserva pelo celular em poucos toques. Sem burocracia."},
+          s2:{title:"Cobertura transparente",text:"Planos claros e suporte humano sempre disponível."},
+          s3:{title:"Retirada fácil",text:"Aeroporto ou pontos parceiros, sem espera."}
+        },
+        how:{title:"Como funciona",step1:"Escolha o veículo e o período.",step2:"Preencha seus dados e confirme a reserva.",step3:"Retire o carro e aproveite a viagem.",step4:"Devolução simples no ponto combinado.",
+             note:"Sem letrinhas miúdas: mostramos valores e coberturas antes da confirmação.", badge1:"Validação antecipada", badge2:"Retirada em minutos"},
+        plans:{title:"Planos & Coberturas",subtitle:"Escolha o que faz sentido para a sua viagem. Sempre com suporte humano 24/7.",
+          p1:{title:"Essencial",badge:"Melhor custo",i1:"Proteção básica contra danos",i2:"Quilometragem controlada",i3:"Assistência 24h"},
+          p2:{title:"Conforto",badge:"Mais escolhido",i1:"Proteção ampliada",i2:"Condutor adicional gratuito",i3:"Retirada expressa"},
+          p3:{title:"Premium",badge:"Zero fricção",i1:"Proteção máxima",i2:"Quilometragem livre",i3:"Entrega/retirada no endereço"},
+          cta:"Solicitar cotação"
+        },
+        reviews:{title:"O que nossos clientes dizem",subtitle:"Experiências reais de quem já alugou com a MDY.",r1:"“Cheguei e saí em 10 minutos. Carro impecável, atendimento muito atencioso.”",r2:"“Cobertura clara, sem susto no balcão. Valeu cada dólar.”",r3:"“Entrega no hotel foi diferencial. Experiência boutique de verdade.”"},
+        locations:{title:"Onde atendemos",l1:"Orlando International Airport (MCO)",l2:"Kissimmee & Lake Buena Vista",l3:"Entrega/retirada em hotéis parceiros",note:"Consulte disponibilidade para outras regiões da Flórida."},
+        faq:{title:"Perguntas frequentes",subtitle:"Algumas respostas rápidas antes da sua reserva.",q1:"Quais documentos preciso?",a1:"Carteira de motorista válida, passaporte (para estrangeiros) e cartão de crédito para caução.",q2:"Posso ter condutor adicional?",a2:"Sim. No plano Conforto, 1 condutor adicional está incluído. Em outros planos é opcional.",q3:"Como funciona o depósito (caução)?",a3:"Bloqueio no cartão de crédito durante o período da locação, liberado após a conferência de devolução.",q4:"Posso receber/entregar no hotel?",a4:"Sim, consulte disponibilidade e taxa de deslocamento no plano Premium."},
+        about:{title:"Sobre a MDY",p1:"Somos uma locadora boutique focada em experiência. Menos burocracia, mais cuidado em cada detalhe.",p2:"Nossa frota é enxuta e curada, com manutenção e higienização padrão hotel, para você só se preocupar com o roteiro.",p3:"Atendemos viajantes, famílias e executivos que valorizam tempo, previsibilidade e transparência."},
+        cta:{title:"Pronto para dirigir sua experiência?",subtitle:"Fale com a nossa equipe e receba sua cotação personalizada em minutos.",cta1:"Solicitar cotação",cta2:"Tirar dúvidas"},
+        contact:{title:"Fale com a gente",subtitle:"Reservas, planos e parcerias.",whatsapp:"WhatsApp comercial",email:"contato@mdyrentalcar.com",address:"Orlando, FL"},
+        form:{name:"Nome",email:"E-mail",message:"Mensagem",send:"Enviar"},
+        footer:{rights:"Todos os direitos reservados.",privacy:"Política de Privacidade",terms:"Termos de Uso"}
+      },
+
+      en:{
+        nav:{benefits:"Benefits",fleet:"Fleet",how:"How it works",plans:"Plans",faq:"FAQ",contact:"Contact"},
+        hero:{badge:"Boutique experience",title:"Car rental, your way",subtitle:"Curated fleet, human support and frictionless process. The right experience, right on time.",cta1:"See vehicles",cta2:"How it works"},
+        benefits:{title:"Why is MDY boutique?",subtitle:"Curation, agility and transparency for people who value time and experience.",
+          b1:{title:"Human support",text:"No chatbots at key moments. You talk to someone who solves it."},
+          b2:{title:"Express pickup",text:"Arrive and go. Docs validated in advance, near-zero line."},
+          b3:{title:"Clear coverage",text:"Straightforward plans: no hidden asterisks."},
+          b4:{title:"Curated fleet",text:"Current, well-kept models with hotel-grade cleaning."}
+        },
+        fleet:{title:"Featured Fleet", subtitle:"Explore our boutique categories", empty:"No active categories yet."},
+        services:{title:"Boutique mobility membership",subtitle:"Clear coverage, 24/7 assistance and queue-less pickup.",
+          s1:{title:"Mobile booking",text:"Book on your phone in a few taps. No hassle."},
+          s2:{title:"Transparent coverage",text:"Clear plans and real human support."},
+          s3:{title:"Easy pickup",text:"Airport or partner spots, no waiting."}
+        },
+        how:{title:"How it works",step1:"Choose the vehicle and dates.",step2:"Fill your info and confirm.",step3:"Pick up and enjoy.",step4:"Easy drop-off at the agreed point.",note:"No fine print: we show prices and coverage before confirmation.", badge1:"Pre-validation", badge2:"Pickup in minutes"},
+        plans:{title:"Plans & Coverage",subtitle:"Pick what makes sense for your trip. Always with 24/7 human support.",
+          p1:{title:"Essential",badge:"Best value",i1:"Basic damage protection",i2:"Controlled mileage",i3:"24/7 assistance"},
+          p2:{title:"Comfort",badge:"Most chosen",i1:"Extended protection",i2:"Free additional driver",i3:"Express pickup"},
+          p3:{title:"Premium",badge:"No friction",i1:"Max protection",i2:"Unlimited mileage",i3:"Door-to-door delivery"},
+          cta:"Request a quote"
+        },
+        reviews:{title:"What guests say",subtitle:"Real experiences from MDY renters.",r1:"“In and out in 10 minutes. Immaculate car, caring staff.”",r2:"“Clear coverage, no counter surprises. Worth every dollar.”",r3:"“Hotel delivery was a game changer. Truly boutique.”"},
+        locations:{title:"Where we operate",l1:"Orlando International Airport (MCO)",l2:"Kissimmee & Lake Buena Vista",l3:"Hotel delivery/pickup",note:"Ask for availability in other Florida areas."},
+        faq:{title:"Frequently asked questions",subtitle:"Quick answers before you book.",q1:"What documents do I need?",a1:"Valid driver’s license, passport (for foreigners) and credit card for deposit.",q2:"Can I add an extra driver?",a2:"Yes. Comfort plan includes 1 extra driver. Optional on other plans.",q3:"How is the security deposit?",a3:"Credit card hold during rental; released after return inspection.",q4:"Hotel delivery/return?",a4:"Yes; check availability and fee in the Premium plan."},
+        about:{title:"About MDY",p1:"A boutique rental focused on experience. Less bureaucracy, more care.",p2:"Curated fleet with hotel-grade maintenance and cleaning.",p3:"We serve travelers, families and executives who value time and transparency."},
+        cta:{title:"Ready to drive your experience?",subtitle:"Talk to our team and get a tailored quote in minutes.",cta1:"Request a quote",cta2:"Get answers"},
+        contact:{title:"Contact us",subtitle:"Bookings, plans and partnerships.",whatsapp:"Business WhatsApp",email:"contato@mdyrentalcar.com",address:"Orlando, FL"},
+        form:{name:"Name",email:"Email",message:"Message",send:"Send"},
+        footer:{rights:"All rights reserved.",privacy:"Privacy Policy",terms:"Terms of Use"}
+      },
+
+      es:{
+        nav:{benefits:"Diferenciales",fleet:"Flota",how:"Cómo funciona",plans:"Planes",faq:"FAQ",contact:"Contacto"},
+        hero:{badge:"Experiencia boutique",title:"Alquiler a tu manera",subtitle:"Flota curada, soporte humano y proceso sin fricción. La experiencia correcta, en el momento correcto.",cta1:"Ver vehículos",cta2:"Cómo funciona"},
+        benefits:{title:"¿Por qué MDY es boutique?",subtitle:"Curaduría, agilidad y transparencia para quienes valoran el tiempo.",
+          b1:{title:"Atención humana",text:"Sin chatbots en el momento clave. Hablas con quien resuelve."},
+          b2:{title:"Retiro exprés",text:"Llega y parte. Documentos validados antes, casi sin fila."},
+          b3:{title:"Coberturas claras",text:"Planes directos: sin letras pequeñas."},
+          b4:{title:"Flota curada",text:"Modelos actuales y cuidados, con limpieza de nivel hotel."}
+        },
+        fleet:{title:"Flota Destacada", subtitle:"Explora nuestras categorías boutique", empty:"Aún no hay categorías activas."},
+        services:{title:"Membresía boutique de movilidad",subtitle:"Cobertura clara, asistencia 24/7 y retiro sin filas.",
+          s1:{title:"Reserva móvil",text:"Reserva en tu teléfono en pocos toques."},
+          s2:{title:"Cobertura transparente",text:"Planes claros y soporte humano real."},
+          s3:{title:"Retiro fácil",text:"Aeropuerto o puntos asociados, sin espera."}
+        },
+        how:{title:"Cómo funciona",step1:"Elige el vehículo y fechas.",step2:"Completa tus datos y confirma.",step3:"Retira y disfruta.",step4:"Devolución simple donde acordado.",note:"Sin letra chica: mostramos precios y coberturas antes.", badge1:"Pre-validación", badge2:"Retiro en minutos"},
+        plans:{title:"Planes y Coberturas",subtitle:"Elige lo que tenga sentido para tu viaje. Siempre con soporte humano 24/7.",
+          p1:{title:"Esencial",badge:"Mejor costo",i1:"Protección básica",i2:"Kilometraje controlado",i3:"Asistencia 24h"},
+          p2:{title:"Confort",badge:"Más elegido",i1:"Protección ampliada",i2:"Conductor adicional gratis",i3:"Retiro exprés"},
+          p3:{title:"Premium",badge:"Sin fricción",i1:"Protección máxima",i2:"Kilometraje libre",i3:"Entrega/retiro a domicilio"},
+          cta:"Solicitar cotización"
+        },
+        reviews:{title:"Qué dicen los clientes",subtitle:"Experiencias reales con MDY.",r1:"“En 10 minutos ya estábamos en ruta. Auto impecable.”",r2:"“Cobertura clara, sin sorpresas en mostrador.”",r3:"“Entrega en el hotel marcó la diferencia.”"},
+        locations:{title:"Dónde atendemos",l1:"Orlando International Airport (MCO)",l2:"Kissimmee & Lake Buena Vista",l3:"Entrega/retiro en hoteles",note:"Consulta disponibilidad en otras zonas de Florida."},
+        faq:{title:"Preguntas frecuentes",subtitle:"Respuestas rápidas antes de reservar.",q1:"¿Qué documentos necesito?",a1:"Licencia válida, pasaporte (extranjeros) y tarjeta de crédito para depósito.",q2:"¿Conductor adicional?",a2:"Sí. En plan Confort, 1 incluido. Opcional en los demás.",q3:"¿Cómo es el depósito?",a3:"Bloqueo en tarjeta durante el alquiler; liberación al devolver.",q4:"¿Entrega/devolución en hotel?",a4:"Sí, según disponibilidad y tarifa en plan Premium."},
+        about:{title:"Sobre MDY",p1:"Rentadora boutique enfocada en la experiencia.",p2:"Flota curada con mantenimiento y limpieza nivel hotel.",p3:"Para viajeros, familias y ejecutivos que valoran el tiempo."},
+        cta:{title:"¿Listo para conducir tu experiencia?",subtitle:"Habla con nuestro equipo y recibe tu cotización en minutos.",cta1:"Solicitar cotización",cta2:"Resolver dudas"},
+        contact:{title:"Hable con nosotros",subtitle:"Reservas, planes y alianzas.",whatsapp:"WhatsApp comercial",email:"contato@mdyrentalcar.com",address:"Orlando, FL"},
+        form:{name:"Nombre",email:"Correo",message:"Mensaje",send:"Enviar"},
+        footer:{rights:"Todos los derechos reservados.",privacy:"Política de Privacidad",terms:"Términos de Uso"}
+      }
+    };
+
+    const langBtnLabel = document.getElementById('langLabel');
+    function setLang(lang){
+      const dict = I18N[lang] || I18N.pt;
+      document.documentElement.lang = lang;
+      document.querySelectorAll('[data-i18n]').forEach(el=>{
+        const path = el.getAttribute('data-i18n').split('.');
+        let cur = dict; for(const k of path) cur = cur?.[k];
+        if(typeof cur === 'string') el.textContent = cur;
+      });
+      langBtnLabel.textContent = lang==='en'?'English':(lang==='es'?'Español':'Português');
+      localStorage.setItem('lang', lang);
+      const url = new URL(window.location); url.searchParams.set('lang', lang); history.replaceState({},'',url);
+    }
+    setLang(new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || 'pt');
+    document.querySelectorAll('[data-lang]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault(); setLang(a.dataset.lang)}));
+
+    // Form de contato
+    const form = document.getElementById('contactForm');
+    form?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(form);
+      const payload = Object.fromEntries(fd.entries());
+      const res = await fetch('/api/contact', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const out = await res.json().catch(()=>({}));
+      const box = document.getElementById('contactFeedback');
+      if(res.ok && out.ok){ box.textContent = 'Mensagem enviada com sucesso!'; box.className='small mt-2 text-success'; form.reset(); }
+      else { box.textContent = 'Erro ao enviar. Verifique os campos.'; box.className='small mt-2 text-danger'; }
+
+      // === Cotação (hero) ===
+      const qForm = document.getElementById('quoteForm');
+      qForm?.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const fd = new FormData(qForm);
+        const data = Object.fromEntries(fd.entries());
+
+        // Monta a mensagem para WhatsApp
+        const msg =
+          `*Nova cotação - MDY Rental Car*\n`+
+          `Nome: ${data.name}\n`+
+          `Telefone: ${data.phone}\n`+
+          `Categoria: ${data.category}\n`+
+          `Retirada: ${data.pickup_place} em ${data.pickup_date}\n`+
+          `Entrega: ${data.drop_place} em ${data.drop_date}`;
+
+        // 1) Tenta registrar no "CRM" (endpoint backend)
+        let saved = false;
+        try{
+          const res = await fetch('/api/quote', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(data)
+          });
+          saved = res.ok;
+        }catch(_){/* ignora; vamos abrir o WhatsApp mesmo assim */}
+
+        // 2) Abre o WhatsApp já com a mensagem para o número do admin
+        const adminPhone = `{{ (whatsapp or '')|replace(' ', '') }}`;  // vem do admin/setting
+        const waUrl = adminPhone
+          ? `https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`
+          : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+        window.open(waUrl, '_blank');
+
+        const qfb = document.getElementById('quoteFeedback');
+        qfb.textContent = saved ? 'Cotação registrada. Abrindo WhatsApp...' : 'Abrindo WhatsApp...';
+        qForm.reset();
+
+    });
+  </script>
+</body>
+</html>

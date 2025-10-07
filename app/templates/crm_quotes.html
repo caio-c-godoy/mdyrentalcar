@@ -1,0 +1,43 @@
+﻿{% extends "admin_base.html" %}
+{% block content %}
+  <h1>CRM - Cotações</h1>
+
+  {% if not items %}
+    <p>Nenhuma cotação por enquanto.</p>
+  {% else %}
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Telefone</th>
+            <th>Retirada</th>
+            <th>Devolução</th>
+            <th>Categoria</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in items %}
+          <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.name }}</td>
+            <td>{{ r.phone }}</td>
+            <td>{{ r.pickup_place }} {{ r.pickup_date }}</td>
+            <td>{{ r.drop_place }} {{ r.drop_date }}</td>
+            <td>{{ r.category }}</td>
+            <td>
+              {# Link direto (gesto do usuário) para abrir o WhatsApp também no mobile #}
+              <a class="btn btn-success btn-sm"
+                 href="{{ url_for('admin.crm_cotacao_whatsapp_redirect', qid=r.id) }}">
+                 WhatsApp
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+{% endblock %}
